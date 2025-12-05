@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v8 (Hızlı Gönderim)</title>
+    <title>Eğitim Takip Asistanı v10 (Özel Mesajlar)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,6 +27,8 @@
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Tooltip için */
+        .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -59,6 +61,8 @@
         const ClipboardPaste = (props) => <IconBase {...props}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></IconBase>;
         const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const PhoneIcon = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
+        const AlertTriangle = (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
+        const EditIcon = (props) => <IconBase {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
 
         const App = () => {
             const [csvData, setCsvData] = useState([]); // Ham veri
@@ -73,9 +77,14 @@
             const [pasteContent, setPasteContent] = useState('');
             const [showColumnSettings, setShowColumnSettings] = useState(false);
             const [allHeaders, setAllHeaders] = useState([]);
-            const [targetPhone, setTargetPhone] = useState(''); // Yeni: Raporun gönderileceği numara
+            const [targetPhone, setTargetPhone] = useState('');
+            
+            // --- YENİ: Öğretici Sohbet Değişkenleri ---
+            const [chatSettings, setChatSettings] = useState({
+                id: '',
+                name: ''
+            });
 
-            // Sütun Eşleşmeleri
             const [colMap, setColMap] = useState({
                 sy: '',
                 sgs: '',
@@ -89,15 +98,24 @@
             const listRefs = useRef({});
 
             useEffect(() => {
-                // LocalStorage'dan numarayı çek
                 const savedPhone = localStorage.getItem('targetPhone');
                 if (savedPhone) setTargetPhone(savedPhone);
+                
+                // Kayıtlı chat ayarlarını çek (opsiyonel)
+                const savedChat = localStorage.getItem('chatSettings');
+                if (savedChat) setChatSettings(JSON.parse(savedChat));
             }, []);
 
             const saveTargetPhone = (e) => {
                 const val = e.target.value;
                 setTargetPhone(val);
                 localStorage.setItem('targetPhone', val);
+            };
+
+            const updateChatSettings = (key, val) => {
+                const newSettings = { ...chatSettings, [key]: val };
+                setChatSettings(newSettings);
+                localStorage.setItem('chatSettings', JSON.stringify(newSettings));
             };
 
             // --- AKILLI SATIR TESPİTİ ---
@@ -152,7 +170,6 @@
                 return newMap;
             };
 
-            // --- YÖNETİCİ LİSTESİ ÇIKARMA (SÜPER FİLTRELİ) ---
             const updateManagerList = (data, mapping) => {
                 if (!data || !data.length) return;
                 const managers = new Set();
@@ -268,19 +285,23 @@
                     if (!grouped[wh]) grouped[wh] = { total: 0, orientation: { incomplete: [] }, chat: { incomplete: [] } };
                     grouped[wh].total += 1;
 
-                    const orientVal = String(item[colMap.orientation] || '').trim().toLowerCase();
+                    const rawOrientVal = String(item[colMap.orientation] || '').trim();
+                    const orientVal = rawOrientVal.toLowerCase();
                     if (orientVal !== 'tamamladı') {
                         grouped[wh].orientation.incomplete.push({
                             'Courier Name': item[colMap.name],
-                            'Courier Gsm': item[colMap.phone]
+                            'Courier Gsm': item[colMap.phone],
+                            'isBlank': rawOrientVal === '' || rawOrientVal === '-'
                         });
                     }
 
-                    const chatVal = String(item[colMap.chat] || '').trim().toLowerCase();
+                    const rawChatVal = String(item[colMap.chat] || '').trim();
+                    const chatVal = rawChatVal.toLowerCase();
                     if (chatVal !== 'tamamladı') {
                         grouped[wh].chat.incomplete.push({
                             'Courier Name': item[colMap.name],
-                            'Courier Gsm': item[colMap.phone]
+                            'Courier Gsm': item[colMap.phone],
+                            'isBlank': rawChatVal === '' || rawChatVal === '-'
                         });
                     }
                 });
@@ -290,14 +311,56 @@
             // --- YARDIMCI FONKSİYONLAR ---
             const toggleWarehouse = (w) => setExpandedWarehouses(prev => ({...prev, [w]: !prev[w]}));
             
-            const getWhatsappLink = (phone, type) => {
+            // --- WHATSAPP MESAJ OLUŞTURUCU (GÜNCELLENDİ) ---
+            const getWhatsappLink = (phone, type, name = '') => {
                 if (!phone) return '#';
                 let p = String(phone).replace(/\D/g, '');
                 if (p.startsWith('0')) p = p.substring(1);
                 if (p.length === 10) p = '90' + p;
-                const m = new Date().toLocaleString('tr-TR', { month: 'long' });
-                const t = type === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbetler';
-                return `https://wa.me/${p}?text=${encodeURIComponent(`Merhaba, ${m} ayına ait ${t} Eğitimin eksik görünüyor, tamamlar mısın?`)}`;
+                
+                let message = "";
+                
+                if (type === 'orientation') {
+                    // ORYANTASYON ÖZEL MESAJI
+                    message = `Merhaba ${name},
+Kurye oryantasyon eğitimin sistemde hala bitmemiş görünüyor. Senden ricam eğitimini tamamlaman. Bitirdikten sonra ekran görüntüsünü benimle paylaşırsan sevinirim. Kurye oryantasyon eğitim linkini aşağıya bırakıyorum.Güvenli sürüşler dilerim.
+
+https://www.getirup.com/getirup/eep/main/activity/3740
+
+Kullanici adın: ${p.substring(2)} (Başında 0 olmadan numaran)
+Şifreni bilmiyorsan veya hatırlamıyorsan gönderdiğim linkten parolami unuttum diyerek yeni şifre talebinde bulabilirsin.
+
+Kullanici adı ve şifrede almada sorun yaşarsan ayrıca bana yazabilirsin yardımcı olurum.
+
+MDU üzerinden giriş yapmak isteyen arkadaşlarımız Google Play Store üzerinden E Mobil Plus uygulamasını indirdikten sonra MDU üzerinden Profilim sekmesi üzerinden GetirUp linkine tıklayıp kullanıcı adı ve şifre bilgisi olmadan doğrudan giriş yapabilir.
+
+E Mobil Plus linki ; https://play.google.com/store/apps/details?id=com.enocta.emobilplus&hl=tr&pli=1`;
+
+                } else {
+                    // ÖĞRETİCİ SOHBET ÖZEL MESAJI
+                    const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
+                    const chatName = chatSettings.name || 'Eğitim';
+                    const chatId = chatSettings.id || '';
+
+                    message = `Merhaba ${name},
+* ${currentMonth} Ayı Öğretici Sohbetler yayında! *🚀💡
+
+📣${currentMonth} Ayı Öğretici Sohbetler "${chatName}" adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler
+
+https://www.getirup.com/getirup/eep/main/activity/${chatId}
+
+Giriş Yöntemleri🚨
+📎E.mobil uygulamasını telefonda yüklü olmalı. Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz
+Yada
+📎E.Mobil uygulamasına giriş yaparak ulaşabilirsiniz.
+Kurum Kodu: GETIRUP
+Kullanıcı adı: ${p.substring(2)} (Başında 0 olmadan)
+Parolamı unuttum diyerek parola oluşturabilirsiniz.
+
+Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
+                }
+
+                return `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
             };
 
             const createScreenshot = async (whName) => {
@@ -306,6 +369,9 @@
                 const originalBg = el.style.backgroundColor;
                 const originalColor = el.style.color;
                 
+                const icons = el.querySelectorAll('.hide-on-capture');
+                icons.forEach(i => i.style.display = 'none');
+
                 el.style.backgroundColor = "#ffffff";
                 el.style.color = "#1e293b";
                 el.style.padding = "20px";
@@ -317,6 +383,7 @@
                     el.style.backgroundColor = originalBg;
                     el.style.color = originalColor;
                     el.style.padding = "";
+                    icons.forEach(i => i.style.display = '');
                 }
             };
 
@@ -346,7 +413,6 @@
                 currentList.forEach((c, i) => message += `${i + 1}. ${c['Courier Name']} (${c['Courier Gsm']})\n`);
                 message += `\n*Toplam Eksik:* ${currentList.length} Kişi`;
                 
-                // Hedef numara varsa direkt ona, yoksa genel paylaş
                 let url = '';
                 if (targetPhone) {
                     let p = targetPhone.replace(/\D/g, '');
@@ -389,7 +455,7 @@
                 setDownloadingAll(true);
                 const keys = Object.keys(processedData);
                 setExpandedWarehouses(keys.reduce((a, k) => ({...a, [k]: true}), {}));
-                await new Promise(r => setTimeout(r, 1000)); // Render bekle
+                await new Promise(r => setTimeout(r, 1000));
                 for (const k of keys) {
                     const d = processedData[k];
                     const list = activeTab === 'orientation' ? d.orientation.incomplete : d.chat.incomplete;
@@ -409,7 +475,7 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v8
+                                Eğitim Takip Asistanı v10
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -418,9 +484,35 @@
 
                         {/* TABLAR */}
                         <div className="flex bg-white rounded-xl p-1 max-w-md mx-auto shadow-sm border">
-                            <button onClick={() => setInputType('upload')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 ${inputType === 'upload' ? 'bg-blue-50 text-blue-700' : 'text-slate-500'}`}><Upload size={16}/> Dosya Yükle</button>
-                            <button onClick={() => setInputType('paste')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 ${inputType === 'paste' ? 'bg-green-50 text-green-700' : 'text-slate-500'}`}><ClipboardPaste size={16}/> Yapıştır</button>
+                            <button onClick={() => setActiveTab('orientation')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 transition-colors ${activeTab === 'orientation' ? 'bg-blue-100 text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}>Oryantasyon</button>
+                            <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:text-slate-700'}`}>Öğretici Sohbetler</button>
                         </div>
+
+                        {/* YENİ: EĞİTİM BİLGİ GİRİŞİ (SADECE SOHBET TABINDA) */}
+                        {activeTab === 'chat' && (
+                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-purple-700 block mb-1">Eğitim ID (Link sonu)</label>
+                                    <input 
+                                        type="text" 
+                                        value={chatSettings.id}
+                                        onChange={(e) => updateChatSettings('id', e.target.value)}
+                                        placeholder="Örn: 1234"
+                                        className="w-full p-2 text-sm border rounded bg-white focus:ring-2 focus:ring-purple-400 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-purple-700 block mb-1">Eğitim İsmi</label>
+                                    <input 
+                                        type="text" 
+                                        value={chatSettings.name}
+                                        onChange={(e) => updateChatSettings('name', e.target.value)}
+                                        placeholder="Örn: Güvenli Sürüş"
+                                        className="w-full p-2 text-sm border rounded bg-white focus:ring-2 focus:ring-purple-400 outline-none"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid md:grid-cols-2 gap-4">
                             {/* YÜKLEME ALANI */}
@@ -440,9 +532,13 @@
                                         <button onClick={handlePasteProcess} disabled={loading} className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-bold">Veriyi İşle</button>
                                     </div>
                                 )}
+                                <div className="absolute top-2 right-2 flex gap-2">
+                                    <button onClick={() => setInputType('upload')} className={`p-1 rounded ${inputType === 'upload' ? 'bg-slate-200' : 'text-slate-400'}`}><Upload size={14}/></button>
+                                    <button onClick={() => setInputType('paste')} className={`p-1 rounded ${inputType === 'paste' ? 'bg-slate-200' : 'text-slate-400'}`}><ClipboardPaste size={14}/></button>
+                                </div>
                             </div>
 
-                            {/* YÖNETİCİ SEÇİMİ VE AYARLAR */}
+                            {/* YÖNETİCİ SEÇİMİ */}
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-sm font-medium text-slate-600 flex items-center gap-2"><User size={16} /> Yönetici Seçiniz</label>
@@ -455,7 +551,7 @@
                                 
                                 {showColumnSettings && (
                                     <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs space-y-2 animate-fade-in">
-                                        <p className="font-bold text-blue-800">Sütun Eşleştirmeleri (Hata varsa düzeltin)</p>
+                                        <p className="font-bold text-blue-800">Sütun Eşleştirmeleri</p>
                                         {[
                                             {k:'sy', l:'SY / Yönetici'}, {k:'sgs', l:'SGS / Sorumlu'}, 
                                             {k:'warehouse', l:'Depo Adı'}, {k:'name', l:'Kurye Adı'}, 
@@ -486,7 +582,6 @@
                                     <ChevronDown className="absolute right-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
 
-                                {/* YENİ: HEDEF NUMARA GİRİŞİ */}
                                 <div className="relative">
                                     <input 
                                         type="text" 
@@ -497,7 +592,7 @@
                                     />
                                     <PhoneIcon className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
-                                <p className="text-[10px] text-slate-400 mt-1 pl-1">Numara girerseniz "WhatsApp Listesi" butonu direkt o kişiye gönderir.</p>
+                                <p className="text-[10px] text-slate-400 mt-1 pl-1">İlgili yetkilinin numarasını girerseniz "WhatsApp Listesi" butonu direkt o kişiye depoya ait olan tüm eksik listeyi gönderir.</p>
 
                                 {managerList.length > 0 && !searchName && <p className="text-xs text-red-500 mt-2 font-bold animate-pulse">👆 Lütfen isminizi seçin!</p>}
                             </div>
@@ -506,11 +601,6 @@
                         {/* SONUÇLAR */}
                         {processedData && Object.keys(processedData).length > 0 ? (
                             <div className="space-y-4 animate-fade-in">
-                                <div className="flex p-1 bg-white rounded-lg border w-fit mx-auto md:mx-0">
-                                    <button onClick={() => setActiveTab('orientation')} className={`px-4 md:px-6 py-2 rounded-md text-sm font-medium ${activeTab === 'orientation' ? 'bg-blue-100 text-blue-700' : 'text-slate-500'}`}>Oryantasyon</button>
-                                    <button onClick={() => setActiveTab('chat')} className={`px-4 md:px-6 py-2 rounded-md text-sm font-medium ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500'}`}>Öğretici Sohbetler</button>
-                                </div>
-
                                 {Object.entries(processedData).map(([whName, data]) => {
                                     const currentData = activeTab === 'orientation' ? data.orientation : data.chat;
                                     const expanded = expandedWarehouses[whName];
@@ -535,13 +625,24 @@
                                                     <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4">
                                                         <div className="mb-4 border-b border-red-100 pb-3">
                                                             <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500">{new Date().toLocaleDateString('tr-TR')}</span></div>
-                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Öğretici Sohbetler Eksik'}</h5>
+                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Öğretici Sohbet Eksik'}</h5>
                                                         </div>
                                                         <ul className="space-y-2">
                                                             {currentData.incomplete.map((c, i) => (
                                                                 <li key={i} className="text-sm text-slate-700 bg-red-50 p-2 md:p-3 rounded flex justify-between items-center border border-red-100">
-                                                                    <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
-                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab)} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
+                                                                        {c.isBlank && (
+                                                                            <div className="tooltip-container relative hide-on-capture">
+                                                                                <AlertTriangle size={14} className="text-amber-500 cursor-help" />
+                                                                                <div className="tooltip-text invisible absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-50 text-center">
+                                                                                    Entegrasyonu tamamlanmamış kurye olabilir dikkat!
+                                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
                                                                 </li>
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
