@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v19 (Otomatik id.txt)</title>
+    <title>Eğitim Takip Asistanı v22 (Renk Skalalı)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +26,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-scale-in { animation: scaleIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
     </style>
 </head>
@@ -435,7 +437,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v19
+                                Eğitim Takip Asistanı v22
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -568,6 +570,17 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                     const currentData = activeTab === 'orientation' ? data.orientation : data.chat;
                                     const expanded = expandedWarehouses[whName];
                                     const theme = activeTab === 'orientation' ? 'text-blue-700 bg-blue-50' : 'text-purple-700 bg-purple-50';
+                                    
+                                    const total = data.total;
+                                    const incompleteCount = currentData.incomplete.length;
+                                    const completedCount = total - incompleteCount;
+                                    const completionRate = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+                                    let rateColor = "text-red-600";
+                                    if (completionRate > 10 && completionRate <= 30) rateColor = "text-orange-500";
+                                    else if (completionRate > 30 && completionRate <= 60) rateColor = "text-amber-500";
+                                    else if (completionRate > 60 && completionRate <= 80) rateColor = "text-blue-600";
+                                    else if (completionRate > 80) rateColor = "text-green-600";
 
                                     return (
                                         <div key={whName} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -576,10 +589,17 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                     <div className={`p-2 rounded-lg ${theme}`}><Filter size={18} /></div>
                                                     <div>
                                                         <h3 className="font-bold text-slate-800 text-sm md:text-base">{whName}</h3>
-                                                        <p className="text-xs text-slate-500">Eksik: <span className="font-bold text-red-600">{currentData.incomplete.length}</span></p>
+                                                        <p className="text-xs text-slate-500">Eksik: <span className="font-bold text-red-600">{incompleteCount}</span> / {total}</p>
                                                     </div>
                                                 </div>
-                                                {expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}
+                                                
+                                                <div className="flex items-center gap-4">
+                                                     <div className="text-right">
+                                                        <span className={`block text-lg font-bold ${rateColor}`}>%{completionRate}</span>
+                                                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tamamlanma</span>
+                                                    </div>
+                                                    {expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}
+                                                </div>
                                             </div>
 
                                             {expanded && (
