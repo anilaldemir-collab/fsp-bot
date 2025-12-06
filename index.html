@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v10 (Özel Mesajlar)</title>
+    <title>Eğitim Takip Asistanı v18 (Görsel Footer)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,7 +27,6 @@
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Tooltip için */
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
     </style>
 </head>
@@ -62,10 +61,11 @@
         const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const PhoneIcon = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
-        const EditIcon = (props) => <IconBase {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconBase>;
+        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
+        const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
 
         const App = () => {
-            const [csvData, setCsvData] = useState([]); // Ham veri
+            const [csvData, setCsvData] = useState([]);
             const [fileName, setFileName] = useState('');
             const [searchName, setSearchName] = useState('');
             const [managerList, setManagerList] = useState([]);
@@ -79,20 +79,11 @@
             const [allHeaders, setAllHeaders] = useState([]);
             const [targetPhone, setTargetPhone] = useState('');
             
-            // --- YENİ: Öğretici Sohbet Değişkenleri ---
-            const [chatSettings, setChatSettings] = useState({
-                id: '',
-                name: ''
-            });
+            // --- EĞİTİM BİLGİLERİ (TXT veya MANUEL) ---
+            const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
 
             const [colMap, setColMap] = useState({
-                sy: '',
-                sgs: '',
-                warehouse: '',
-                orientation: '',
-                chat: '',
-                name: '',
-                phone: ''
+                sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: ''
             });
 
             const listRefs = useRef({});
@@ -101,7 +92,6 @@
                 const savedPhone = localStorage.getItem('targetPhone');
                 if (savedPhone) setTargetPhone(savedPhone);
                 
-                // Kayıtlı chat ayarlarını çek (opsiyonel)
                 const savedChat = localStorage.getItem('chatSettings');
                 if (savedChat) setChatSettings(JSON.parse(savedChat));
             }, []);
@@ -118,34 +108,55 @@
                 localStorage.setItem('chatSettings', JSON.stringify(newSettings));
             };
 
-            // --- AKILLI SATIR TESPİTİ ---
-            const findHeaderRowIndex = (dataArray) => {
-                let bestIndex = 0;
-                let maxScore = 0;
+            const handleIdFile = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const text = event.target.result;
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                    let foundId = '';
+                    let foundName = '';
+                    lines.forEach(line => {
+                        const lower = line.toLowerCase();
+                        if (lower.startsWith('id:') || lower.startsWith('id=')) { foundId = line.split(/[:=]/)[1].trim(); }
+                        else if (lower.startsWith('isim:') || lower.startsWith('name:') || lower.startsWith('ad:')) { foundName = line.split(/[:=]/)[1].trim(); }
+                    });
+                    if (!foundId && !foundName && lines.length >= 2) { foundId = lines[0]; foundName = lines[1]; }
+                    else if (!foundId && lines.length > 0 && /^\d+$/.test(lines[0])) foundId = lines[0];
 
+                    if (foundId || foundName) {
+                        const newSettings = { id: foundId, name: foundName };
+                        setChatSettings(newSettings);
+                        localStorage.setItem('chatSettings', JSON.stringify(newSettings));
+                        alert(`✅ Bilgiler Yüklendi!\n\nID: ${foundId}\nİsim: ${foundName}`);
+                    } else {
+                        alert("Dosyadan veri okunamadı.");
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = null; 
+            };
+
+            // --- DOSYA İŞLEME MANTIĞI ---
+            const findHeaderRowIndex = (dataArray) => {
+                let bestIndex = 0, maxScore = 0;
                 for (let i = 0; i < Math.min(dataArray.length, 50); i++) {
                     const row = dataArray[i];
                     if (!row || !Array.isArray(row)) continue;
                     const rowStr = row.join(' ').toLowerCase();
-                    
                     let score = 0;
                     if (rowStr.includes('sy') || rowStr.includes('yönetici')) score += 5;
                     if (rowStr.includes('sgs') || rowStr.includes('sorumlu')) score += 5;
                     if (rowStr.includes('warehouse') || rowStr.includes('depo')) score += 4;
                     if (rowStr.includes('courier') || rowStr.includes('kurye')) score += 3;
-                    if (rowStr.includes('oryantasyon')) score += 3;
-
                     if (rowStr.includes('saved by') || rowStr.includes('from:') || rowStr.includes('generated')) score -= 20;
-                    
-                    if (score > maxScore) {
-                        maxScore = score;
-                        bestIndex = i;
-                    }
+                    if (score > maxScore) { maxScore = score; bestIndex = i; }
                 }
                 return bestIndex; 
             };
 
-            // --- OTOMATİK SÜTUN EŞLEŞTİRME ---
             const autoMapColumns = (headers) => {
                 const lowerHeaders = headers.map(h => String(h).toLowerCase().trim());
                 const find = (keywords) => {
@@ -155,84 +166,54 @@
                     }
                     return '';
                 };
-
                 const newMap = {
-                    sy: find(['sy', 'saha yöneticisi', 'saha yoneticisi', 'yönetici']),
+                    sy: find(['sy', 'saha yöneticisi', 'yönetici']),
                     sgs: find(['sgs', 'saha sorumlusu', 'sorumlu']),
-                    warehouse: find(['warehouse', 'depo', 'depo adı']),
+                    warehouse: find(['warehouse', 'depo']),
                     orientation: find(['oryantasyon', 'orientation']),
                     chat: find(['öğretici sohbetler', 'sohbet', 'chat']),
                     name: find(['courier name', 'kurye adı', 'ad soyad', 'isim']),
-                    phone: find(['courier gsm', 'telefon', 'gsm', 'cep'])
+                    phone: find(['courier gsm', 'telefon', 'gsm'])
                 };
-                
                 setColMap(newMap);
-                return newMap;
             };
 
             const updateManagerList = (data, mapping) => {
                 if (!data || !data.length) return;
                 const managers = new Set();
-                
                 data.forEach(row => {
                     [mapping.sy, mapping.sgs].forEach(key => {
                         if (key && row[key]) {
                             const val = String(row[key]).trim();
                             const lowerVal = val.toLowerCase();
-                            
-                            if (
-                                val.length > 2 && 
-                                val.length < 50 && 
-                                !lowerVal.includes('saved by') &&
-                                !lowerVal.includes('from:') &&
-                                !lowerVal.includes('sidebar') &&
-                                !lowerVal.includes('addon') &&
-                                !lowerVal.includes('http') &&
-                                !lowerVal.includes('www') &&
-                                !lowerVal.includes('bilgi yok') &&
-                                !lowerVal.includes(':') 
-                            ) {
+                            if (val.length > 2 && val.length < 50 && !lowerVal.includes('saved by') && !lowerVal.includes('from:') && !lowerVal.includes('sidebar') && !lowerVal.includes('http') && !lowerVal.includes(':')) {
                                 managers.add(val);
                             }
                         }
                     });
                 });
-
                 setManagerList(Array.from(managers).sort((a, b) => a.localeCompare(b, 'tr')));
             };
 
-            useEffect(() => {
-                if (csvData.length > 0) {
-                    updateManagerList(csvData, colMap);
-                }
-            }, [csvData, colMap]);
+            useEffect(() => { if (csvData.length > 0) updateManagerList(csvData, colMap); }, [csvData, colMap]);
 
             const processRawDataArray = (rawData) => {
                 try {
                     const headerIdx = findHeaderRowIndex(rawData);
                     const headers = rawData[headerIdx].map(h => h ? String(h).trim() : `Sütun ${Math.random().toString().substr(2,4)}`);
                     setAllHeaders(headers);
-
                     const cleanData = [];
                     for (let i = headerIdx + 1; i < rawData.length; i++) {
                         const row = rawData[i];
                         if (!row || row.length === 0) continue;
                         const rowObj = {};
-                        headers.forEach((h, idx) => {
-                            rowObj[h] = row[idx] !== undefined ? row[idx] : "";
-                        });
+                        headers.forEach((h, idx) => { rowObj[h] = row[idx] !== undefined ? row[idx] : ""; });
                         cleanData.push(rowObj);
                     }
-
                     setCsvData(cleanData);
                     autoMapColumns(headers); 
                     setLoading(false);
-
-                } catch (e) {
-                    console.error(e);
-                    alert("Veri işleme hatası: " + e.message);
-                    setLoading(false);
-                }
+                } catch (e) { alert("Veri işleme hatası: " + e.message); setLoading(false); }
             };
 
             const handleFileUpload = (event) => {
@@ -248,10 +229,7 @@
                         let sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('rapor')) || workbook.SheetNames[0];
                         const rawData = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
                         processRawDataArray(rawData);
-                    } catch (err) {
-                        alert("Dosya okunamadı.");
-                        setLoading(false);
-                    }
+                    } catch (err) { alert("Dosya okunamadı."); setLoading(false); }
                 };
                 reader.readAsArrayBuffer(file);
                 event.target.value = null;
@@ -272,46 +250,36 @@
             const processedData = useMemo(() => {
                 if (!csvData.length || !searchName) return null;
                 const lowerSearch = searchName.toLocaleLowerCase('tr');
-
                 const filtered = csvData.filter(item => {
                     const sy = String(item[colMap.sy] || '').toLocaleLowerCase('tr');
                     const sgs = String(item[colMap.sgs] || '').toLocaleLowerCase('tr');
                     return sy === lowerSearch || sgs === lowerSearch; 
                 });
-
                 const grouped = {};
                 filtered.forEach(item => {
                     const wh = item[colMap.warehouse] || 'Bilinmeyen Depo';
                     if (!grouped[wh]) grouped[wh] = { total: 0, orientation: { incomplete: [] }, chat: { incomplete: [] } };
                     grouped[wh].total += 1;
-
+                    
                     const rawOrientVal = String(item[colMap.orientation] || '').trim();
-                    const orientVal = rawOrientVal.toLowerCase();
-                    if (orientVal !== 'tamamladı') {
+                    if (rawOrientVal.toLowerCase() !== 'tamamladı') {
                         grouped[wh].orientation.incomplete.push({
-                            'Courier Name': item[colMap.name],
-                            'Courier Gsm': item[colMap.phone],
-                            'isBlank': rawOrientVal === '' || rawOrientVal === '-'
+                            'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawOrientVal === '' || rawOrientVal === '-'
                         });
                     }
-
                     const rawChatVal = String(item[colMap.chat] || '').trim();
-                    const chatVal = rawChatVal.toLowerCase();
-                    if (chatVal !== 'tamamladı') {
+                    if (rawChatVal.toLowerCase() !== 'tamamladı') {
                         grouped[wh].chat.incomplete.push({
-                            'Courier Name': item[colMap.name],
-                            'Courier Gsm': item[colMap.phone],
-                            'isBlank': rawChatVal === '' || rawChatVal === '-'
+                            'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawChatVal === '' || rawChatVal === '-'
                         });
                     }
                 });
                 return grouped;
             }, [csvData, searchName, colMap]);
 
-            // --- YARDIMCI FONKSİYONLAR ---
             const toggleWarehouse = (w) => setExpandedWarehouses(prev => ({...prev, [w]: !prev[w]}));
             
-            // --- WHATSAPP MESAJ OLUŞTURUCU (GÜNCELLENDİ) ---
+            // --- WHATSAPP MESAJ ---
             const getWhatsappLink = (phone, type, name = '') => {
                 if (!phone) return '#';
                 let p = String(phone).replace(/\D/g, '');
@@ -319,9 +287,7 @@
                 if (p.length === 10) p = '90' + p;
                 
                 let message = "";
-                
                 if (type === 'orientation') {
-                    // ORYANTASYON ÖZEL MESAJI
                     message = `Merhaba ${name},
 Kurye oryantasyon eğitimin sistemde hala bitmemiş görünüyor. Senden ricam eğitimini tamamlaman. Bitirdikten sonra ekran görüntüsünü benimle paylaşırsan sevinirim. Kurye oryantasyon eğitim linkini aşağıya bırakıyorum.Güvenli sürüşler dilerim.
 
@@ -335,13 +301,10 @@ Kullanici adı ve şifrede almada sorun yaşarsan ayrıca bana yazabilirsin yard
 MDU üzerinden giriş yapmak isteyen arkadaşlarımız Google Play Store üzerinden E Mobil Plus uygulamasını indirdikten sonra MDU üzerinden Profilim sekmesi üzerinden GetirUp linkine tıklayıp kullanıcı adı ve şifre bilgisi olmadan doğrudan giriş yapabilir.
 
 E Mobil Plus linki ; https://play.google.com/store/apps/details?id=com.enocta.emobilplus&hl=tr&pli=1`;
-
                 } else {
-                    // ÖĞRETİCİ SOHBET ÖZEL MESAJI
                     const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
-                    const chatName = chatSettings.name || 'Eğitim';
-                    const chatId = chatSettings.id || '';
-
+                    const chatName = chatSettings.name || '[Eğitim İsmi]';
+                    const chatId = chatSettings.id || '[ID]';
                     message = `Merhaba ${name},
 * ${currentMonth} Ayı Öğretici Sohbetler yayında! *🚀💡
 
@@ -359,7 +322,6 @@ Parolamı unuttum diyerek parola oluşturabilirsiniz.
 
 Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 }
-
                 return `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
             };
 
@@ -368,14 +330,11 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const el = listRefs.current[whName];
                 const originalBg = el.style.backgroundColor;
                 const originalColor = el.style.color;
-                
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
-
                 el.style.backgroundColor = "#ffffff";
                 el.style.color = "#1e293b";
                 el.style.padding = "20px";
-                
                 try {
                     const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
                     return canvas;
@@ -406,42 +365,27 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const data = processedData[whName];
                 const currentList = activeTab === 'orientation' ? data.orientation.incomplete : data.chat.incomplete;
                 if (!currentList || !currentList.length) return;
-
                 const dateStr = new Date().toLocaleDateString('tr-TR');
                 const typeStr = activeTab === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbet';
                 let message = `*${whName} - ${typeStr} Eksik Kurye Listesi (${dateStr})*\n\n`;
                 currentList.forEach((c, i) => message += `${i + 1}. ${c['Courier Name']} (${c['Courier Gsm']})\n`);
                 message += `\n*Toplam Eksik:* ${currentList.length} Kişi`;
-                
-                let url = '';
-                if (targetPhone) {
-                    let p = targetPhone.replace(/\D/g, '');
-                    if (p.startsWith('0')) p = p.substring(1);
-                    if (p.length === 10) p = '90' + p;
-                    url = `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
-                } else {
-                    url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                }
-                
+                let url = targetPhone ? `https://wa.me/${targetPhone.replace(/\D/g, '').replace(/^0/, '90')}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
                 window.open(url, '_blank');
             };
 
             const handleShareImage = async (whName) => {
                 const canvas = await createScreenshot(whName);
                 if (!canvas) return;
-                
                 canvas.toBlob(async (blob) => {
                     const file = new File([blob], getFileName(whName), { type: 'image/png' });
-                    
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try { await navigator.share({ files: [file] }); } catch (e) {}
                     } else {
                          try {
                             const item = new ClipboardItem({ 'image/png': blob });
                             await navigator.clipboard.write([item]);
-                            if (confirm("Görsel panoya kopyalandı! WhatsApp Web açılsın mı?")) {
-                                window.open("https://web.whatsapp.com", "_blank");
-                            }
+                            if (confirm("Görsel panoya kopyalandı! WhatsApp Web açılsın mı?")) window.open("https://web.whatsapp.com", "_blank");
                         } catch (err) {
                             alert("Otomatik kopyalama yapılamadı. Görsel indiriliyor.");
                             handleDownloadSingle(whName);
@@ -468,6 +412,9 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 alert("Tüm indirmeler tamamlandı!");
             };
 
+            // Geçerli ayı Türkçe olarak al
+            const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
+
             return (
                 <div className="min-h-screen bg-slate-50 p-4 font-sans text-slate-800 pb-24">
                     <div className="max-w-5xl mx-auto space-y-6">
@@ -475,7 +422,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v10
+                                Eğitim Takip Asistanı v18
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -488,29 +435,32 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                             <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:text-slate-700'}`}>Öğretici Sohbetler</button>
                         </div>
 
-                        {/* YENİ: EĞİTİM BİLGİ GİRİŞİ (SADECE SOHBET TABINDA) */}
+                        {/* EĞİTİM BİLGİ GİRİŞİ (TXT UPLOAD ve MANUEL) */}
                         {activeTab === 'chat' && (
-                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-xs font-bold text-purple-700 block mb-1">Eğitim ID (Link sonu)</label>
-                                    <input 
-                                        type="text" 
-                                        value={chatSettings.id}
-                                        onChange={(e) => updateChatSettings('id', e.target.value)}
-                                        placeholder="Eğitim İçeriği Her Ay Değiştiği İçin Paylaşılan Linkin sonunda bulunan 5 haneli rakamı girin!"
-                                        className="w-full p-2 text-sm border rounded bg-white focus:ring-2 focus:ring-purple-400 outline-none"
-                                    />
+                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in relative">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h3 className="font-bold text-purple-800 flex items-center gap-2"><FileUp size={16}/> Eğitim Bilgileri</h3>
+                                    
+                                    {/* TXT Yükleme Butonu */}
+                                    <div className="relative">
+                                        <button className="text-xs bg-white px-3 py-1.5 rounded border border-purple-200 text-purple-700 hover:bg-purple-100 font-medium flex items-center gap-1">
+                                            <Upload size={12}/> Bilgi Dosyası Yükle (.txt)
+                                        </button>
+                                        <input 
+                                            type="file" 
+                                            accept=".txt" 
+                                            onChange={handleIdFile} 
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+                                            title="id.txt Yükle"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs font-bold text-purple-700 block mb-1">Eğitim İsmi</label>
-                                    <input 
-                                        type="text" 
-                                        value={chatSettings.name}
-                                        onChange={(e) => updateChatSettings('name', e.target.value)}
-                                        placeholder="Örn: Güvenli Sürüş Bu Alanı Sadece Kişilere Mesaj Atarken Düzenleyin! Solda Yer Alan Kutucuğa Eğitim Linkinin Sonunda Bulan Sayıyı, Buraya ise Eğitimin Adını Girin!"
-                                        className="w-full p-2 text-sm border rounded bg-white focus:ring-2 focus:ring-purple-400 outline-none"
-                                    />
-                                </div>
+                                {chatSettings.id && chatSettings.name && (
+                                    <div className="bg-white px-3 py-2 rounded border border-purple-200 text-xs text-purple-700 flex items-center gap-2">
+                                        <Check size={14} className="text-green-500"/>
+                                        <span>Yüklü: <strong>{chatSettings.name}</strong> (ID: {chatSettings.id})</span>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -538,7 +488,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 </div>
                             </div>
 
-                            {/* YÖNETİCİ SEÇİMİ */}
+                            {/* YÖNETİCİ SEÇİMİ VE AYARLAR */}
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-sm font-medium text-slate-600 flex items-center gap-2"><User size={16} /> Yönetici Seçiniz</label>
@@ -592,7 +542,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                     />
                                     <PhoneIcon className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
-                                <p className="text-[10px] text-slate-400 mt-1 pl-1">İlgili yetkilinin numarasını girerseniz "WhatsApp Listesi" butonu direkt o kişiye depoya ait olan tüm eksik listeyi gönderir.</p>
+                                <p className="text-[10px] text-slate-400 mt-1 pl-1">Numara girerseniz "WhatsApp Listesi" butonu direkt o kişiye gönderir.</p>
 
                                 {managerList.length > 0 && !searchName && <p className="text-xs text-red-500 mt-2 font-bold animate-pulse">👆 Lütfen isminizi seçin!</p>}
                             </div>
@@ -625,7 +575,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                     <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4">
                                                         <div className="mb-4 border-b border-red-100 pb-3">
                                                             <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500">{new Date().toLocaleDateString('tr-TR')}</span></div>
-                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Öğretici Sohbet Eksik'}</h5>
+                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Sohbet Eksik'}</h5>
                                                         </div>
                                                         <ul className="space-y-2">
                                                             {currentData.incomplete.map((c, i) => (
@@ -647,6 +597,35 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
                                                         </ul>
+
+                                                        {/* ÖĞRETİCİ SOHBETLER İÇİN GÖRSEL ALTI BİLGİ NOTU */}
+                                                        {activeTab === 'chat' && (
+                                                            <div className="mt-6 pt-4 border-t-2 border-slate-100 text-xs text-slate-700 leading-relaxed">
+                                                                <p className="font-bold text-center text-sm text-purple-800 mb-2">
+                                                                    🚀 {currentMonth} Ayı Öğretici Sohbetler Yayında! 🚀
+                                                                </p>
+                                                                <p className="mb-2">
+                                                                    📣 {currentMonth} Ayı Öğretici Sohbetler <span className="font-bold">"{chatSettings.name || 'Eğitim Adı'}"</span> adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler.
+                                                                </p>
+                                                                <p className="mb-4 text-blue-600 font-mono break-all font-bold">
+                                                                    https://www.getirup.com/getirup/eep/main/activity/{chatSettings.id || 'Eğitim ID'}
+                                                                </p>
+                                                                
+                                                                <p className="font-bold text-slate-800 mb-1 border-b border-slate-200 pb-1">Giriş Yöntemleri 🚨</p>
+                                                                <div className="space-y-2">
+                                                                    <p>
+                                                                        📎 <strong>E.mobil uygulaması</strong> telefonda yüklü olmalı (Google Play Store içerisinde mevcut). Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz.
+                                                                    </p>
+                                                                    <p className="font-bold text-center text-slate-400 text-[10px]">- YADA -</p>
+                                                                    <p>
+                                                                        📎 <strong>E.Mobil uygulamasına</strong> giriş yaparak ulaşabilirsiniz.<br/>
+                                                                        <span className="font-semibold text-purple-700">Kurum Kodu:</span> GETIRUP<br/>
+                                                                        <span className="font-semibold text-purple-700">Kullanıcı adı:</span> Telefon numaranız (başında 0 olmadan)<br/>
+                                                                        Parolamı unuttum diyerek yeni parola oluşturabilirsiniz.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     
                                                     {/* Action Buttons */}
