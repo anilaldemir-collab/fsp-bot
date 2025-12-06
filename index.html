@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v18 (Görsel Footer)</title>
+    <title>Eğitim Takip Asistanı v19 (Otomatik id.txt)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -78,8 +78,9 @@
             const [showColumnSettings, setShowColumnSettings] = useState(false);
             const [allHeaders, setAllHeaders] = useState([]);
             const [targetPhone, setTargetPhone] = useState('');
+            const [isAutoLoaded, setIsAutoLoaded] = useState(false);
             
-            // --- EĞİTİM BİLGİLERİ (TXT veya MANUEL) ---
+            // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
 
             const [colMap, setColMap] = useState({
@@ -88,12 +89,25 @@
 
             const listRefs = useRef({});
 
+            // 1. BAŞLANGIÇTA OTOMATİK VERİ ÇEKME (id.txt)
             useEffect(() => {
                 const savedPhone = localStorage.getItem('targetPhone');
                 if (savedPhone) setTargetPhone(savedPhone);
                 
                 const savedChat = localStorage.getItem('chatSettings');
                 if (savedChat) setChatSettings(JSON.parse(savedChat));
+
+                // Otomatik olarak id.txt'yi kontrol et
+                fetch('id.txt')
+                    .then(res => {
+                        if(res.ok) return res.text();
+                        throw new Error('Dosya yok');
+                    })
+                    .then(text => {
+                        parseIdContent(text, true); // true = sessiz mod (alert yok)
+                    })
+                    .catch(err => console.log("Otomatik id.txt bulunamadı, manuel mod aktif."));
+
             }, []);
 
             const saveTargetPhone = (e) => {
@@ -102,39 +116,38 @@
                 localStorage.setItem('targetPhone', val);
             };
 
-            const updateChatSettings = (key, val) => {
-                const newSettings = { ...chatSettings, [key]: val };
-                setChatSettings(newSettings);
-                localStorage.setItem('chatSettings', JSON.stringify(newSettings));
+            const parseIdContent = (text, isAuto = false) => {
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+                let foundId = '';
+                let foundName = '';
+
+                // Strateji 1: Etiketli okuma
+                lines.forEach(line => {
+                    const lower = line.toLowerCase();
+                    if (lower.startsWith('id:') || lower.startsWith('id=')) { foundId = line.split(/[:=]/)[1].trim(); }
+                    else if (lower.startsWith('isim:') || lower.startsWith('name:') || lower.startsWith('ad:')) { foundName = line.split(/[:=]/)[1].trim(); }
+                });
+
+                // Strateji 2: Sıralı okuma
+                if (!foundId && !foundName && lines.length >= 2) { foundId = lines[0]; foundName = lines[1]; }
+                else if (!foundId && lines.length > 0 && /^\d+$/.test(lines[0])) foundId = lines[0];
+
+                if (foundId || foundName) {
+                    const newSettings = { id: foundId, name: foundName };
+                    setChatSettings(newSettings);
+                    localStorage.setItem('chatSettings', JSON.stringify(newSettings));
+                    if (isAuto) setIsAutoLoaded(true);
+                    if (!isAuto) alert(`✅ Bilgiler Yüklendi!\n\nID: ${foundId}\nİsim: ${foundName}`);
+                } else if (!isAuto) {
+                    alert("Dosyadan veri okunamadı.");
+                }
             };
 
             const handleIdFile = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-                
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    const text = event.target.result;
-                    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-                    let foundId = '';
-                    let foundName = '';
-                    lines.forEach(line => {
-                        const lower = line.toLowerCase();
-                        if (lower.startsWith('id:') || lower.startsWith('id=')) { foundId = line.split(/[:=]/)[1].trim(); }
-                        else if (lower.startsWith('isim:') || lower.startsWith('name:') || lower.startsWith('ad:')) { foundName = line.split(/[:=]/)[1].trim(); }
-                    });
-                    if (!foundId && !foundName && lines.length >= 2) { foundId = lines[0]; foundName = lines[1]; }
-                    else if (!foundId && lines.length > 0 && /^\d+$/.test(lines[0])) foundId = lines[0];
-
-                    if (foundId || foundName) {
-                        const newSettings = { id: foundId, name: foundName };
-                        setChatSettings(newSettings);
-                        localStorage.setItem('chatSettings', JSON.stringify(newSettings));
-                        alert(`✅ Bilgiler Yüklendi!\n\nID: ${foundId}\nİsim: ${foundName}`);
-                    } else {
-                        alert("Dosyadan veri okunamadı.");
-                    }
-                };
+                reader.onload = (event) => parseIdContent(event.target.result, false);
                 reader.readAsText(file);
                 e.target.value = null; 
             };
@@ -422,7 +435,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v18
+                                Eğitim Takip Asistanı v19
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -457,7 +470,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 </div>
                                 {chatSettings.id && chatSettings.name && (
                                     <div className="bg-white px-3 py-2 rounded border border-purple-200 text-xs text-purple-700 flex items-center gap-2">
-                                        <Check size={14} className="text-green-500"/>
+                                        {isAutoLoaded ? <span className="bg-purple-100 text-purple-800 px-1 rounded text-[10px] font-bold">OTOMATİK</span> : <Check size={14} className="text-green-500"/>}
                                         <span>Yüklü: <strong>{chatSettings.name}</strong> (ID: {chatSettings.id})</span>
                                     </div>
                                 )}
