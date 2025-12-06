@@ -384,7 +384,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const typeStr = activeTab === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbet';
                 let message = `*${whName} - ${typeStr} Eksik Kurye Listesi (${dateStr})*\n\n`;
                 currentList.forEach((c, i) => message += `${i + 1}. ${c['Courier Name']} (${c['Courier Gsm']})\n`);
-                message += `\n*Toplam Eksik:* ${currentList.length} Kişi`;
+                message += `\n*Toplam Eksik Eğitim Sayısı:* ${currentList.length} Kişi`;
                 let url = targetPhone ? `https://wa.me/${targetPhone.replace(/\D/g, '').replace(/^0/, '90')}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
                 window.open(url, '_blank');
             };
@@ -608,7 +608,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                     <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4">
                                                         <div className="mb-4 border-b border-red-100 pb-3">
                                                             <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500">{new Date().toLocaleDateString('tr-TR')}</span></div>
-                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Sohbet Eksik'}</h5>
+                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Öğretici Sohbetler Eksik'}</h5>
                                                         </div>
                                                         <ul className="space-y-2">
                                                             {currentData.incomplete.map((c, i) => (
