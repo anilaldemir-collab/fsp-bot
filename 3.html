@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v35 (Final Kararlı)</title>
+    <title>Eğitim Takip Asistanı v36 (Kararlı & Hafif)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,11 +19,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- AYARLAR -->
-    <script>
-        window.DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1e6anRqSJmDIBXwJAvyust3ROpNPtFMaTm92renU40HQ/edit?usp=sharing"; 
-    </script>
-
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -31,12 +26,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-        .animate-scale-in { animation: scaleIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
         
-        /* Getir Fontu Benzeri */
+        /* Getir Font Benzeri */
         @import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
     </style>
 </head>
@@ -47,18 +39,17 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ (SVG COMPONENT) ---
-        // Bu yöntemle base64 hatası oluşmaz, sayfa çökmez.
+        // --- HAFİFLETİLMİŞ GÖRSEL BİLEŞENLERİ ---
         
-        const GetirTextLogo = ({ className, style }) => (
-            <div className={className} style={{...style, fontFamily: "'Varela Round', sans-serif", color: '#FFD300', fontSize: '60px', letterSpacing: '-2px'}}>
-                getir
-            </div>
+        const GetirLogo = ({ className, style }) => (
+            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+                <path fill="#FFD300" d="M26.2 43.8c-3.1 0-5.8-1.5-7.3-3.9-1.2 2.4-3.6 3.9-6.8 3.9-4.8 0-8.2-3.6-8.2-8.6V20.8h6.2v13.6c0 1.9 1.1 3.1 3 3.1 1.7 0 3.1-1.3 3.1-3.2V20.8h6.2v13.8c0 2 1.3 3.3 3.2 3.3 1.9 0 3.1-1.3 3.1-3.2V20.8h6.2v14.4c-.1 4.9-3.8 8.6-8.7 8.6zM61.9 26.6h-9.9v-5.8h9.9v5.8zm0 16.8h-9.9V28.8h9.9v14.6zM88.7 43.8c-4.8 0-8.6-3.8-8.6-8.6V20.8h6.2v13.8c0 1.9 1.3 3.1 3.1 3.1 1.6 0 2.9-1.1 2.9-3V16h6.2v19.1c.1 4.9-3.6 8.7-9.8 8.7zM116.3 43.4h-6.2V16h6.2v27.4zM116.3 12.8h-6.2V7h6.2v5.8zM146.4 25.8c-1.1-3.1-4.2-5.3-7.8-5.3-4.8 0-8.5 3.8-8.5 8.7 0 4.8 3.6 8.6 8.5 8.6 3.4 0 6.4-1.9 7.7-4.8l5.5 2.5c-2.4 4.6-7.3 7.8-13.1 7.8-8.3 0-14.8-6.4-14.8-14.1s6.5-14.1 14.8-14.1c6.1 0 11.2 3.5 13.5 8.5l-5.8 2.2z"/>
+            </svg>
         );
 
-        const CourierIllustration = ({ className, style }) => (
-            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
-                <path d="M416 208c0-44.2-35.8-80-80-80h-16c-37.5 0-69.3 25.8-77.8 60.8l-18.2 72.8-21.8 15.3c-28.7 20.1-48.2 51.5-54.6 86.1H128v40c0 4.4 3.6 8 8 8h32c4.4 0 8-3.6 8-8v-29.6c8.5 2.8 17.5 4.3 26.8 4.3 43.6 0 79.8-32.2 86.8-74.2l3.4-21.8 20.1-10c7.8-3.9 12.9-11.9 12.9-20.7v-14.2l20.5 20.5c7.6 7.6 21 2.9 21.6-7.8l5.3-84.6 42.7 42.7c6.2 6.2 16.4 6.2 22.6 0l25.4-25.4c6.2-6.2 6.2-16.4 0-22.6l-67.9-67.9c-6.2-6.2-16.4-6.2-22.6 0l-25.4 25.4c-6.2 6.2-6.2 16.4 0 22.6l17.7 17.7-6.2 99.4-44.5-44.5c-6.6-6.6-16.3-9.1-25.3-6.5l-33.6 9.6 15.6-62.4c3.9-15.7 18.2-27.1 34.4-27.1h16c17.7 0 32 14.3 32 32 0 4.6 1.1 8.9 3 12.9l36.5 73c2 4 6.1 6.6 10.5 6.6h.4c4.9-.3 9.1-3.7 10.1-8.5l9-45.2c5.3-26.6-11.8-52.6-38.3-58zm-268.4 86.8l47 47c-6.1 27.9-29.9 49.3-59.2 51.9V336h24.8c18.5 0 35.8-8.8 46.7-23.2l12.4-18.6-64-44.8-7.7 45.4zM48 256c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 64c-8.8 0-16-7.2-16-16s7.2-16 16-16 16 7.2 16 16-7.2 16-16 16zm368-64c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 64c-8.8 0-16-7.2-16-16s7.2-16 16-16 16 7.2 16 16-7.2 16-16 16z"/>
+        const MotorbikeIcon = ({ className, style }) => (
+            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 13c.7 0 1.37.13 1.97.38l1.45-3.37c.32-.75-.24-1.51-1.04-1.51H20V5h-2v3h-4V5h-2v3H9V5H7v3H5c-.8 0-1.36.76-1.04 1.51l1.45 3.37A4.98 4.98 0 0 0 4 15c0 2.76 2.24 5 5 5s5-2.24 5-5c0-.17-.02-.34-.04-.5h4.08c-.02.16-.04.33-.04.5 0 2.76 2.24 5 5 5s5-2.24 5-5c0-1.84-1-3.45-2.5-4.3zM9 18c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm10 0c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
             </svg>
         );
 
@@ -105,7 +96,6 @@
             const [targetPhone, setTargetPhone] = useState('');
             const [isAutoLoaded, setIsAutoLoaded] = useState(false);
             
-            // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
 
             const [colMap, setColMap] = useState({
@@ -366,22 +356,18 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const originalPadding = el.style.padding;
                 const originalBorderRadius = el.style.borderRadius;
                 
-                // 1. Gereksiz ikonları gizle
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
-                // 2. Görselleri görünür yap (display: block)
                 const captureElements = el.querySelectorAll('.show-on-capture');
                 captureElements.forEach(b => b.style.display = 'block');
 
-                // 3. Stilleri uygula
                 el.style.backgroundColor = "#5d3ebc"; 
                 el.style.color = "#ffd300"; 
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
                 el.style.position = "relative"; 
                 
-                // 4. Liste elemanlarının stilini değiştir (Beyaz kutu)
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
@@ -393,7 +379,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     li.style.padding = "10px 15px";
                 });
                 
-                // 5. Başlıkların rengini ayarla
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
                     if(!h.closest('li')) { 
@@ -404,7 +389,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     }
                 });
                 
-                // 6. Linkleri (Telefon) düz metin gibi göster
                 const links = el.querySelectorAll('a');
                 links.forEach(a => {
                     a.dataset.originalStyle = a.getAttribute('style') || '';
@@ -418,7 +402,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     if(icon) icon.style.display = 'none';
                 });
 
-                // ÖNEMLİ: Tarayıcının render etmesi için küçük bir bekleme
                 await new Promise(r => setTimeout(r, 200));
 
                 try {
@@ -433,7 +416,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     console.error("Canvas hatası:", e);
                     return null;
                 } finally {
-                    // STİLLERİ GERİ AL
                     el.style.backgroundColor = originalBg;
                     el.style.color = originalColor;
                     el.style.padding = originalPadding;
@@ -504,7 +486,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v35 (Final Kararlı)
+                                Eğitim Takip Asistanı v36 (Kararlı & Hafif)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -676,17 +658,17 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                         
                                                         {/* LOGO (Görsel Modu İçin - INLINE SVG) */}
                                                         <div 
-                                                            className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 z-20 w-32"
+                                                            className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-24 z-20"
                                                         >
-                                                            <GetirTextLogo className="w-full text-center" />
+                                                            <GetirLogo className="w-full h-full" />
                                                         </div>
 
-                                                        {/* ARKA PLAN GÖRSELİ (3D Kurye - INLINE SVG) */}
+                                                        {/* ARKA PLAN GÖRSELİ (Motorbike Icon - INLINE SVG) */}
                                                         <div 
                                                             className="show-on-capture hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
                                                             style={{transform: 'translate(20%, 20%)'}}
                                                         >
-                                                             <CourierIllustration className="w-full h-full" />
+                                                             <MotorbikeIcon className="w-full h-full" />
                                                         </div>
 
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
@@ -708,7 +690,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
+                                                                    <a href={`https://wa.me/${c['Courier Gsm']?.replace(/\D/g, '')?.replace(/^0/, '90')}?text=${encodeURIComponent(activeTab === 'orientation' ? `Merhaba ${c['Courier Name']},\nKurye oryantasyon eğitimin sistemde hala bitmemiş görünüyor. Senden ricam eğitimini tamamlaman. Bitirdikten sonra ekran görüntüsünü benimle paylaşırsan sevinirim. Kurye oryantasyon eğitim linkini aşağıya bırakıyorum.Güvenli sürüşler dilerim.\n\nhttps://www.getirup.com/getirup/eep/main/activity/3740\n\nKullanici adın: ${c['Courier Gsm']?.replace(/\D/g, '')?.substring(1) || ''} (Başında 0 olmadan numaran)\nŞifreni bilmiyorsan veya hatırlamıyorsam gönderdiğim linkten parolami unuttum diyerek yeni şifre talebinde bulabilirsin.\n\nKullanici adı ve şifrede almada sorun yaşarsan ayrıca bana yazabilirsin yardımcı olurum.\n\nMDU üzerinden giriş yapmak isteyen arkadaşlarımız Google Play Store üzerinden E Mobil Plus uygulamasını indirdikten sonra MDU üzerinden Profilim sekmesi üzerinden GetirUp linkine tıklayıp kullanıcı adı ve şifre bilgisi olmadan doğrudan giriş yapabilir.\n\nE Mobil Plus linki ; https://play.google.com/store/apps/details?id=com.enocta.emobilplus&hl=tr&pli=1` : `Merhaba ${c['Courier Name']},\n* ${currentMonth} Ayı Öğretici Sohbetler yayında! *🚀💡\n\n📣${currentMonth} Ayı Öğretici Sohbetler "${chatSettings.name || 'Eğitim Adı'}" adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler\n\nhttps://www.getirup.com/getirup/eep/main/activity/${chatSettings.id || 'Eğitim ID'}\n\nGiriş Yöntemleri🚨\n📎E.mobil uygulaması telefon yüklü olmalı. ( Google Play Store içerisinde mevcut. )Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz\n\nYada\n\n📎E.Mobil uygulamasına giriş yaparak ulaşabilirsiniz.\nKurum Kodu: GETIRUP\nKullanıcı adı: ${c['Courier Gsm']?.replace(/\D/g, '')?.substring(1) || ''} (Başında 0 olmadan)\nParolamı unuttum diyerek yeni parola oluşturabilirsiniz.\n\nEğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`)}`} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
                                                                 </li>
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
