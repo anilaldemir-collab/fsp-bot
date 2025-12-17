@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurye Karşılama Afişi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Yazıcıdan çıktı alırken veya PDF yaparken sadece afiş kısmını göster */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            #poster-area {
+                width: 100% !important;
+                height: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-10">
+
+    <!-- Kontrol Paneli (Çıktıda Gizlenir) -->
+    <div class="no-print w-full max-w-4xl bg-white p-6 rounded-lg shadow-md mb-8 flex flex-col md:flex-row gap-4 items-end justify-between">
+        <div class="w-full md:w-1/2">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="nameInput">
+                Kurye Adı Soyadı
+            </label>
+            <input 
+                id="nameInput" 
+                type="text" 
+                placeholder="Örn: Ahmet Yılmaz" 
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500"
+                oninput="updateName()"
+            >
+        </div>
+        
+        <div class="w-full md:w-1/2 flex flex-col gap-2">
+            <label class="block text-gray-700 text-sm font-bold" for="imageInput">
+                Afiş Görseli (Eğer görünmüyorsa buradan seçin)
+            </label>
+            <input 
+                id="imageInput" 
+                type="file" 
+                accept="image/*"
+                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                onchange="loadImage(event)"
+            >
+        </div>
+        
+        <button onclick="downloadPoster()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out whitespace-nowrap">
+            Görseli İndir
+        </button>
+    </div>
+
+    <!-- Afiş Alanı -->
+    <div id="poster-area" class="relative w-[800px] h-[1131px] bg-white shadow-2xl overflow-hidden text-white mx-auto">
+        <!-- Arka Plan Görseli -->
+        <!-- Varsayılan olarak yüklenen dosya ismini deniyoruz, yoksa placeholder çıkacak -->
+        <img 
+            id="bg-image" 
+            src="Gemini_Generated_Image_yjpci7yjpci7yjpc.jpg" 
+            alt="Afiş Arka Planı" 
+            class="absolute inset-0 w-full h-full object-cover z-0"
+            onerror="this.src='https://placehold.co/800x1131/purple/white?text=Gorsel+Yukleyin'"
+        >
+
+        <!-- Karartma Katmanı (Yazının okunması için) -->
+        <div class="absolute inset-0 bg-black/60 z-10"></div>
+
+        <!-- Metin İçeriği (Ortalanmış) -->
+        <div class="absolute inset-0 z-20 flex flex-col justify-center items-center px-12 text-center h-full">
+            
+            <div class="bg-black/30 backdrop-blur-sm p-8 rounded-xl border border-white/20 shadow-lg">
+                <!-- Başlık Kısmı -->
+                <h2 class="text-3xl font-bold mb-6">
+                    Sevgili <span id="courier-name" class="text-yellow-400 italic">Kurye Adı</span>;
+                </h2>
+
+                <div class="text-left space-y-4 text-sm leading-relaxed text-gray-100">
+                    <p>
+                        Öncelikle aramıza hoş geldin! Ekibimizin yeni üyesi olarak seni görmekten mutluyuz. 
+                        Çıktığın her yolda önceliğimiz senin sağlığın ve güvenliğin.
+                    </p>
+                    
+                    <p>
+                        Değerli MDU kullanıcısı,<br>
+                        GetirUp giriş problemleri, ihlaller ve kazalarla ilgili konularda haberleşmek üzere 
+                        depondan sorumlu olan Saha Güvenlik Uzmanı olarak ben yardımcı olacağım.
+                    </p>
+
+                    <p>
+                        Duyurulardan haberdar olmak ve hızlı iletişim kurmak adına deponun 
+                        <strong>Güvenlik Whatsapp</strong> kanallarına da eklendiğinden emin olmalısın.
+                    </p>
+
+                    <div class="bg-white/10 p-4 rounded-lg my-4">
+                        <p class="font-semibold text-yellow-100 mb-2">Güvenliğin için aşağıda yazılan kural setimizi tekrar gözden geçirmeni rica ediyorum;</p>
+                        <ul class="list-disc list-inside space-y-1 ml-2 text-gray-200">
+                            <li>Yasal mevzuat ve güvenlik kurallarımız gereği şehir içi hız limitimiz azami <strong>50 km/s</strong>’dir.</li>
+                            <li>Trafik işaret ve işaretçilerine uymak.</li>
+                            <li>Yasaklı yolları kullanmamak. (MDU üzerinde senin için kırmızı boyalı alanlar ile belirtildi.)</li>
+                            <li>Taşıt trafiğine kapalı alanlarda, kaldırımlarda ve yaya yollarında seyir etmemeliyiz.</li>
+                            <li>Sürüş esnasında kask her zaman başımızda tam takılı ve klipsi bağlı seyir etmek.</li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        Aklına takılan ve sormak istediğin bir durum olduğunda lütfen sormaktan çekinme.
+                    </p>
+                    
+                    <p class="font-semibold text-center italic text-lg mt-6 text-yellow-100">
+                        "Senin güvenliğin, bizim en büyük önceliğimiz. Kazasız, keyifli ve bol kazançlı bir çalışma hayatı dileriz. Aramıza tekrar hoş geldin!"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // İsim güncelleme fonksiyonu
+        function updateName() {
+            const input = document.getElementById('nameInput');
+            const output = document.getElementById('courier-name');
+            
+            if (input.value.trim() === "") {
+                output.innerText = "Kurye Adı";
+            } else {
+                output.innerText = input.value;
+            }
+        }
+
+        // Görsel yükleme fonksiyonu (Kullanıcının kendi resmini seçmesi için)
+        function loadImage(event) {
+            const image = document.getElementById('bg-image');
+            image.src = URL.createObjectURL(event.target.files[0]);
+            image.onload = function() {
+                URL.revokeObjectURL(image.src); // Bellek temizliği
+            }
+        }
+
+        // Afişi resim olarak indirme fonksiyonu
+        function downloadPoster() {
+            const posterArea = document.getElementById('poster-area');
+            const name = document.getElementById('nameInput').value || "Afiş";
+            
+            // Geçici olarak border-radius'u kaldır ki tam köşeli çıksın (opsiyonel)
+            // html2canvas kullanımı
+            html2canvas(posterArea, {
+                scale: 2, // Yüksek kalite için
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Kurye_Afis_${name}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
