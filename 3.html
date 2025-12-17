@@ -357,20 +357,24 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const originalPadding = el.style.padding;
                 const originalBorderRadius = el.style.borderRadius;
                 
+                // Screenshot öncesi gizlenecek elemanlar
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
+                // Screenshot öncesi görünür olacak elemanlar (Arka plan görseli vb.)
                 const bgImage = el.querySelectorAll('.capture-bg-image');
                 const captureLogo = el.querySelectorAll('.capture-logo');
                 bgImage.forEach(b => b.style.display = 'block');
                 captureLogo.forEach(b => b.style.display = 'block');
 
-                el.style.backgroundColor = "#5d3ebc"; 
-                el.style.color = "#ffd300"; 
+                // STİL AYARLARI (Görsel Tasarımı)
+                el.style.backgroundColor = "#5d3ebc"; // Getir Moru
+                el.style.color = "#ffd300"; // Getir Sarısı
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
-                el.style.position = "relative"; 
+                el.style.position = "relative"; // Arka plan görseli için
                 
+                // Liste elemanlarının stilini değiştir (Beyaz kutu)
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
@@ -382,26 +386,28 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     li.style.padding = "10px 15px";
                 });
                 
+                // Başlıkların rengini ayarla
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
-                    if(!h.closest('li')) { 
+                    if(!h.closest('li')) { // Liste içindekilere dokunma
                         h.style.color = "#ffd300"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300";
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300";
+                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; // Tarih vb.
+                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; // Link
                         if(h.classList.contains('text-purple-700')) h.style.color = "#ffd300";
                     }
                 });
                 
-                // Telefon numaraları ve linklerin görünürlüğünü ayarla
+                // Linkleri düz metin gibi göster
                 const links = el.querySelectorAll('a');
                 links.forEach(a => {
                     a.dataset.originalStyle = a.getAttribute('style') || '';
                     a.style.display = 'inline-block';
                     a.style.backgroundColor = 'transparent';
                     a.style.border = 'none';
-                    a.style.color = '#333';
+                    a.style.color = '#333'; // Beyaz kutu içinde koyu renk
                     a.style.textDecoration = 'none';
                     a.style.fontSize = '12px';
+                    // İkonu gizle, sadece numarayı göster
                     const icon = a.querySelector('svg');
                     if(icon) icon.style.display = 'none';
                 });
@@ -410,6 +416,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: "#5d3ebc", useCORS: true });
                     return canvas;
                 } finally {
+                    // STİLLERİ GERİ AL
                     el.style.backgroundColor = originalBg;
                     el.style.color = originalColor;
                     el.style.padding = originalPadding;
@@ -420,7 +427,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     captureLogo.forEach(b => b.style.display = 'none');
                     
                     listItems.forEach(li => {
-                        li.style.backgroundColor = ""; 
+                        li.style.backgroundColor = ""; // class'tan gelen renge dön
                         li.style.color = "";
                         li.style.fontWeight = "";
                         li.style.border = "";
