@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v39 (Özel Tasarım)</title>
+    <title>Eğitim Takip Asistanı v24.1 (Numarasız Görsel)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
         // --- GÖMÜLÜ GÖRSELLER (Base64) ---
         
         // Getir Logosu (Sarı)
-        const GETIR_LOGO_SVG = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgNjAiPjxwYXRoIGZpbGw9IiNmZmQxMGQiIGQ9Ik0yNi4yIDQzLjhjLTMuMSAwLTUuOC0xLjUtNy4zLTMuOS0xLjIgMi40LTMuNiAzLjktNi44IDMuOS00LjggMC04LjItMy42LTguMi04LjZWMjAuOGg2LjJ2MTMuNmMwIDEuOSAxLjEgMy4xIDMgMy4xIDEuNyAwIDMuMS0xLjMgMy4xLTMuMlYyMC44aDYuMnYxMy44YzAgMiAxLjMgMy4zIDMuMiAzLjMgMS45IDAgMy4xLTEuMyAzLjEtMy4yVjIwLjhoNi4ydjE0LjRjLS4xIDQuOS0zLjggOC42LTguNyA4LjZ6TTYxLjkgMjYuNmgtOS45di01LjhoOS45djUuOHptMCAxNi44aC05LjlWMjguOGg5Ljl2MTQuNnpNODguNyA0My44Yy00LjggMC04LjYtMy44LTguNi04LjZWMjAuOGg2LjJ2MTMuOGMwIDEuOSAxLjMgMy4xIDMuMSAzLjEgMS42IDAgMi45LTEuMSAyLjktM1YxNmg2LjJ2MTkuMWMuMSA0LjktMy42IDguNy05LjggOC43ek0xMTYuMyA0My40aC02LjJWMTZoNi4ydjI3LjR6TTExNi4zIDEyLjhoLTYuMlY3aDYuMnY1Ljh6TTE0Ni40IDI1LjhjLTEuMS0zLjEtNC4yLTUuMy03LjgtNS4zLTQuOCAwLTguNSAzLjgtOC41IDguNyAwIDQuOCAzLjYgOC42IDguNSA4LjYgMy40IDAgNi40LTEuOSA3LjctNC44bDUuNSAyLjVjLTIuNCA0LjYtNy4zIDcuOC0xMy4xIDcuOC04LjMgMC0xNC44LTYuNC0xNC44LTE0LjFzNi41LTE0LjEgMTQuOC0xNC4xYzYuMSAwIDExLjIgMy41IDEzLjUgOC41bC01LjggMi4yeiIvPjwvc3ZnPg==`;
+        const GETIR_LOGO_SVG = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgNjAiPjxwYXRoIGZpbGw9IiNGRkQzMDAiIGQ9Ik0yNi4yIDQzLjhjLTMuMSAwLTUuOC0xLjUtNy4zLTMuOS0xLjIgMi40LTMuNiAzLjktNi44IDMuOS00LjggMC04LjItMy42LTguMi04LjZWMjAuOGg2LjJ2MTMuNmMwIDEuOSAxLjEgMy4xIDMgMy4xIDEuNyAwIDMuMS0xLjMgMy4xLTMuMlYyMC44aDYuMnYxMy44YzAgMiAxLjMgMy4zIDMuMiAzLjMgMS45IDAgMy4xLTEuMyAzLjEtMy4yVjIwLjhoNi4ydjE0LjRjLS4xIDQuOS0zLjggOC42LTguNyA4LjZ6TTYxLjkgMjYuNmgtOS45di01LjhoOS45djUuOHptMCAxNi44aC05LjlWMjguOGg5Ljl2MTQuNnpNODguNyA0My44Yy00LjggMC04LjYtMy44LTguNi04LjZWMjAuOGg2LjJ2MTMuOGMwIDEuOSAxLjMgMy4xIDMuMSAzLjEgMS42IDAgMi45LTEuMSAyLjktM1YxNmg2LjJ2MTkuMWMuMSA0LjktMy42IDguNy05LjggOC43ek0xMTYuMyA0My40aC02LjJWMTZoNi4ydjI3LjR6TTExNi4zIDEyLjhoLTYuMlY3aDYuMnY1Ljh6TTE0Ni40IDI1LjhjLTEuMS0zLjEtNC4yLTUuMy03LjgtNS4zLTQuOCAwLTguNSAzLjgtOC41IDguNyAwIDQuOCAzLjYgOC42IDguNSA4LjYgMy40IDAgNi40LTEuOSA3LjctNC44bDUuNSAyLjVjLTIuNCA0LjYtNy4zIDcuOC0xMy4xIDcuOC04LjMgMC0xNC44LTYuNC0xNC44LTE0LjFzNi41LTE0LjEgMTQuOC0xNC4xYzYuMSAwIDExLjIgMy41IDEzLjUgOC41bC01LjggMi4yeiIvPjwvc3ZnPg==`;
 
         // Kurye İllüstrasyonu (Beyaz/Transparan - Motosikletli)
         const COURIER_SVG = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBmaWxsPSJ3aGl0ZSI++PC9zdmc+`;
@@ -367,11 +367,19 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 
                 // Screenshot öncesi görünür olacak elemanlar (Arka plan görseli vb.)
                 const bgImage = el.querySelectorAll('.capture-bg-image');
+                const captureLogo = el.querySelectorAll('.capture-logo');
                 bgImage.forEach(b => b.style.display = 'block');
+                captureLogo.forEach(b => b.style.display = 'block');
+                
+                // *** NUMARALAR GİZLENİYOR ***
+                const links = el.querySelectorAll('a');
+                links.forEach(a => {
+                   a.style.display = 'none'; // Tamamen gizle (liste yapısı bozulmadan)
+                });
 
                 // STİL AYARLARI (Görsel Tasarımı)
                 el.style.backgroundColor = "#5d3ebc"; // Getir Moru
-                el.style.color = "#ffd10d"; // Getir Sarısı (Yeni)
+                el.style.color = "#ffd300"; // Getir Sarısı
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
                 el.style.position = "relative"; // Arka plan görseli için
@@ -386,52 +394,22 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
-                    li.style.display = "flex";
-                    li.style.flexDirection = "column";
-                    li.style.alignItems = "center";
-                    li.style.justifyContent = "center";
-                    li.style.gap = "4px";
-                    li.style.textAlign = "center";
                 });
                 
                 // Başlıkların rengini ayarla
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
                     if(!h.closest('li')) { // Liste içindekilere dokunma
-                        h.style.color = "#ffd10d"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd10d"; // Tarih vb.
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd10d"; // Link
-                        if(h.classList.contains('text-purple-700')) h.style.color = "#ffd10d";
-                        
-                        // Tarih bilgisi için stil
-                        if (h.classList.contains('date-label')) {
-                            h.style.fontSize = '18px';
-                            h.style.fontWeight = '800';
-                        }
+                        h.style.color = "#ffd300"; 
+                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; // Tarih vb.
+                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; // Link
+                        if(h.classList.contains('text-purple-700')) h.style.color = "#ffd300";
                     }
                 });
                 
-                // Linkleri düz metin gibi göster
-                const links = el.querySelectorAll('a');
-                links.forEach(a => {
-                    a.dataset.originalStyle = a.getAttribute('style') || '';
-                    a.style.display = 'inline-block';
-                    a.style.backgroundColor = 'transparent';
-                    a.style.border = 'none';
-                    a.style.color = '#333'; // Beyaz kutu içinde koyu renk
-                    a.style.textDecoration = 'none';
-                    a.style.fontSize = '12px';
-                    const icon = a.querySelector('svg');
-                    if(icon) icon.style.display = 'none';
-                });
-
                 try {
                     const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: "#5d3ebc", useCORS: true });
                     return canvas;
-                } catch(e) {
-                    console.error("Canvas hatası:", e);
-                    setHasError(true);
-                    return null;
                 } finally {
                     // STİLLERİ GERİ AL
                     el.style.backgroundColor = originalBg;
@@ -441,34 +419,22 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     
                     icons.forEach(i => i.style.display = '');
                     bgImage.forEach(b => b.style.display = 'none');
+                    captureLogo.forEach(b => b.style.display = 'none');
                     
+                    // *** NUMARALARI GERİ GETİR ***
+                    links.forEach(a => a.style.display = '');
+
                     listItems.forEach(li => {
-                        li.style.backgroundColor = ""; 
+                        li.style.backgroundColor = ""; // class'tan gelen renge dön
                         li.style.color = "";
                         li.style.fontWeight = "";
                         li.style.border = "";
                         li.style.marginBottom = "";
                         li.style.borderRadius = "";
                         li.style.padding = "";
-                        li.style.display = "";
-                        li.style.flexDirection = "";
-                        li.style.alignItems = "";
-                        li.style.justifyContent = "";
-                        li.style.gap = "";
-                        li.style.textAlign = "";
                     });
 
-                    headers.forEach(h => {
-                         h.style.color = "";
-                         h.style.fontSize = "";
-                         h.style.fontWeight = "";
-                    });
-                    
-                    links.forEach(a => {
-                        a.setAttribute('style', a.dataset.originalStyle || '');
-                        const icon = a.querySelector('svg');
-                        if(icon) icon.style.display = '';
-                    });
+                    headers.forEach(h => h.style.color = "");
                 }
             };
 
@@ -560,7 +526,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v39
+                                Eğitim Takip Asistanı v24.1 (Numarasız Görsel)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -738,13 +704,13 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
 
                                                         {/* ARKA PLAN GÖRSELİ (3D Kurye - INLINE SVG) */}
                                                         <div 
-                                                            className="capture-bg-image hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
+                                                            className="show-on-capture hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
                                                             style={{transform: 'translate(20%, 20%)'}}
                                                             dangerouslySetInnerHTML={{ __html: COURIER_SVG.replace('data:image/svg+xml;base64,', '').split(',').length > 1 ? atob(COURIER_SVG.split(',')[1]) : decodeURIComponent(COURIER_SVG.split(',')[1])}}
                                                         ></div>
 
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
-                                                            <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500 date-label">{new Date().toLocaleDateString('tr-TR')}</span></div>
+                                                            <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500">{new Date().toLocaleDateString('tr-TR')}</span></div>
                                                             <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Sohbet Eksik'}</h5>
                                                         </div>
                                                         <ul className="space-y-2 relative z-10">
