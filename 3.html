@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v24.4</title>
+    <title>Eğitim Takip Asistanı v24.5 (Kararlı Fix)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,24 +48,24 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- YENİ GÖRSEL BİLEŞENLERİ (Kod ile çizim) ---
+        // --- GÖRSEL BİLEŞENLERİ (INLINE SVG - Çökme Yapmaz) ---
 
         // Getir Yazı Logosu
         const GetirTextLogo = () => (
-            <div className="font-getir font-bold" style={{ color: '#ffd10d', fontSize: '70px', lineHeight: '1', textAlign: 'center', width: '100%' }}>
+            <div className="font-getir font-bold tracking-tighter" style={{ color: '#ffd10d', fontSize: '80px', lineHeight: '1', textAlign: 'center', width: '100%', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
                 getir
             </div>
         );
 
-        // Güvenlik Ekipmanları Deseni (Hologram Arka Plan)
+        // Güvenlik Ekipmanları Deseni (Hologram Arka Plan - Hafif SVG)
         const SafetyGearPattern = ({ style }) => (
             <svg style={style} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
                 <defs>
-                    <pattern id="gearPattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                    <pattern id="gearPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
                         {/* Kask İkonu */}
-                        <path d="M40 20c-5 0-9 4-9 9 0 5 4 9 9 9s9-4 9-9c0-5-4-9-9-9zm0 14c-2.7 0-5-2.2-5-5h10c0 2.8-2.2 5-5 5z" fill="#ffffff" opacity="0.15" transform="scale(1.5) translate(-10, -5)"/>
-                        {/* Yelek İkonu */}
-                        <path d="M20 50l-5 5v10h4v-8l3-3h16l3 3v8h4v-10l-5-5H20z" fill="#ffffff" opacity="0.15" transform="scale(0.8) translate(10, 10)"/>
+                        <path d="M50 20c-8 0-15 6-15 15 0 8 7 15 15 15s15-7 15-15c0-9-7-15-15-15zm0 22c-4 0-8-3-8-8h16c0 5-4 8-8 8z" fill="#ffffff" opacity="0.1" transform="scale(1.2) translate(-10, -5)"/>
+                        {/* Mont İkonu */}
+                        <path d="M20 70l-8 8v15h6v-12l5-5h20l5 5v12h6v-15l-8-8H20z" fill="#ffffff" opacity="0.1" transform="scale(0.8) translate(10, 10)"/>
                     </pattern>
                 </defs>
                 <rect width="100%" height="100%" fill="url(#gearPattern)" />
@@ -114,8 +114,8 @@
             const [allHeaders, setAllHeaders] = useState([]);
             const [targetPhone, setTargetPhone] = useState('');
             const [isAutoLoaded, setIsAutoLoaded] = useState(false);
+            const [hasError, setHasError] = useState(false);
             
-            // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
             const [colMap, setColMap] = useState({ sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: '' });
             const listRefs = useRef({});
@@ -368,7 +368,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 el.style.borderRadius = "0px";
                 el.style.position = "relative"; 
                 
-                // Liste elemanları
+                // Liste elemanları (Beyaz kutu)
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
@@ -404,7 +404,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 });
 
                 // Render bekle
-                await new Promise(r => setTimeout(r, 200));
+                await new Promise(r => setTimeout(r, 300));
 
                 try {
                     const canvas = await window.html2canvas(el, { 
@@ -416,6 +416,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     return canvas;
                 } catch(e) {
                     console.error("Canvas hatası:", e);
+                    setHasError(true);
                     return null;
                 } finally {
                     el.style.backgroundColor = originalBg;
@@ -441,7 +442,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
 
                     headers.forEach(h => {
                         h.style.color = "";
-                         if (h.classList.contains('date-label')) {
+                        if (h.classList.contains('date-label')) {
                              h.style.fontSize = "";
                              h.style.fontWeight = "";
                         }
@@ -515,7 +516,20 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 alert("Tüm indirmeler tamamlandı!");
             };
 
+            // Geçerli ayı Türkçe olarak al
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
+
+            if (hasError) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-red-50 p-4 text-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-red-600 mb-2">Bir Hata Oluştu!</h1>
+                            <p className="text-slate-600 mb-4">Görsel oluşturulurken bir sorun çıktı. Sayfayı yenileyip tekrar deneyin.</p>
+                            <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-6 py-2 rounded-lg">Yenile</button>
+                        </div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="min-h-screen bg-slate-50 p-4 font-sans text-slate-800 pb-24">
@@ -524,7 +538,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v24.4 (Stabil & Düzenlenmiş)
+                                Eğitim Takip Asistanı v24.5 (Kararlı Fix)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -559,7 +573,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         )}
 
                         <div className="grid md:grid-cols-2 gap-4">
-                            {/* YÜKLEME */}
+                            {/* YÜKLEME ALANI */}
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative min-h-[200px]">
                                 {inputType === 'upload' ? (
                                     <div className="w-full h-full relative group cursor-pointer flex flex-col items-center justify-center">
@@ -582,7 +596,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 </div>
                             </div>
 
-                            {/* YÖNETİCİ */}
+                            {/* YÖNETİCİ SEÇİMİ VE AYARLAR */}
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-sm font-medium text-slate-600 flex items-center gap-2"><User size={16} /> Yönetici Seçiniz</label>
@@ -664,9 +678,9 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                 <div className="border-t border-slate-100 bg-slate-50/50 p-4">
                                                     <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4 relative overflow-hidden">
                                                         <div className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-32 z-20">
-                                                            <GetirTextLogo className="w-full text-center" />
+                                                            <GetirTextLogo />
                                                         </div>
-                                                        <div className="show-on-capture hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" style={{transform: 'translate(20%, 20%)'}}>
+                                                        <div className="show-on-capture hidden absolute top-0 left-0 w-full h-full z-0 opacity-20 pointer-events-none">
                                                              <SafetyGearHologram className="w-full h-full" />
                                                         </div>
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
