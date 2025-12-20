@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v38 (Yazı Logo + Kurye)</title>
+    <title>Eğitim Takip Asistanı v43 (Final Stabil)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +19,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+    <!-- AYARLAR -->
+    <script>
+        window.DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1e6anRqSJmDIBXwJAvyust3ROpNPtFMaTm92renU40HQ/edit?usp=sharing"; 
+    </script>
+
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -27,11 +32,6 @@
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Getir Font Benzeri */
-        @import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
-        .font-getir { font-family: 'Varela Round', sans-serif; letter-spacing: -1px; }
-
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
     </style>
 </head>
@@ -42,20 +42,18 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- GÖRSEL BİLEŞENLERİ (INLINE SVG - Çökme Yapmaz) ---
+        // --- GÖRSEL BİLEŞENLERİ (SAF SVG) ---
+        // Base64 decoding yerine doğrudan SVG kodu kullanarak çökme sorununu engelliyoruz.
 
-        // Getir Yazı Logosu
-        const GetirTextLogo = ({ className, style, color }) => (
-            <div className={`${className} font-getir font-bold`} style={{...style, color: color, fontSize: '50px', lineHeight: '1'}}>
-                getir
-            </div>
+        const GetirLogo = ({ className, style }) => (
+            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+                <path fill="#FFD300" d="M26.2 43.8c-3.1 0-5.8-1.5-7.3-3.9-1.2 2.4-3.6 3.9-6.8 3.9-4.8 0-8.2-3.6-8.2-8.6V20.8h6.2v13.6c0 1.9 1.1 3.1 3 3.1 1.7 0 3.1-1.3 3.1-3.2V20.8h6.2v13.8c0 2 1.3 3.3 3.2 3.3 1.9 0 3.1-1.3 3.1-3.2V20.8h6.2v14.4c-.1 4.9-3.8 8.6-8.7 8.6zM61.9 26.6h-9.9v-5.8h9.9v5.8zm0 16.8h-9.9V28.8h9.9v14.6zM88.7 43.8c-4.8 0-8.6-3.8-8.6-8.6V20.8h6.2v13.8c0 1.9 1.3 3.1 3.1 3.1 1.6 0 2.9-1.1 2.9-3V16h6.2v19.1c.1 4.9-3.6 8.7-9.8 8.7zM116.3 43.4h-6.2V16h6.2v27.4zM116.3 12.8h-6.2V7h6.2v5.8zM146.4 25.8c-1.1-3.1-4.2-5.3-7.8-5.3-4.8 0-8.5 3.8-8.5 8.7 0 4.8 3.6 8.6 8.5 8.6 3.4 0 6.4-1.9 7.7-4.8l5.5 2.5c-2.4 4.6-7.3 7.8-13.1 7.8-8.3 0-14.8-6.4-14.8-14.1s6.5-14.1 14.8-14.1c6.1 0 11.2 3.5 13.5 8.5l-5.8 2.2z"/>
+            </svg>
         );
 
-        // Kurye / Kask İllüstrasyonu (SVG Path)
-        const CourierIcon = ({ className, style }) => (
-            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" fill="currentColor">
-                {/* Motosikletli Kurye Vektörü */}
-                <path d="M280 32c0-17.7-14.3-32-32-32h-8.8c-12.3 0-23.7 7.7-28.4 19.1l-14 34.1L183 45c-20-10.2-44.2-3.8-56.1 14.8L96.2 108.5 73.1 93.1c-14.2-9.5-33.2-6.5-44.2 7L6 133.5c-9.1 11.2-7.8 27.6 2.9 37.3L52.8 210c4.1 3.7 9.4 5.9 14.9 6.2l76.7 3.8c7.4 .4 14.2-3.8 17.2-10.6l10.9-24.6 21 36.3c3.9 6.7 10.7 10.9 18.4 10.9h62.8c-1.3 4.9-2 10-2 15.3 0 33.6 27.2 60.7 60.7 60.7 20 0 37.9-9.8 49-24.8 5.7 3 12.1 4.8 19 4.8 22.1 0 40-17.9 40-40 0-2.6-.2-5.1-.7-7.6l24.7-61.8c.1 0 .1 0 .2 0 17.7 0 32-14.3 32-32s-14.3-32-32-32h-12c-4.4 0-8 3.6-8 8v16h-37l-22.6-56.5c-4.2-10.6-14.5-17.5-25.9-17.5H324c-17.7 0-32 14.3-32 32h-12zM48 368a48 48 0 1 0 96 0 48 48 0 1 0 -96 0zm336 48a48 48 0 1 0 0-96 48 48 0 1 0 0 96zm176-48a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
+        const CourierIllustration = ({ className, style }) => (
+            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="white">
+                <path d="M416 208c0-44.2-35.8-80-80-80h-16c-37.5 0-69.3 25.8-77.8 60.8l-18.2 72.8-21.8 15.3c-28.7 20.1-48.2 51.5-54.6 86.1H128v40c0 4.4 3.6 8 8 8h32c4.4 0 8-3.6 8-8v-29.6c8.5 2.8 17.5 4.3 26.8 4.3 43.6 0 79.8-32.2 86.8-74.2l3.4-21.8 20.1-10c7.8-3.9 12.9-11.9 12.9-20.7v-14.2l20.5 20.5c7.6 7.6 21 2.9 21.6-7.8l5.3-84.6 42.7 42.7c6.2 6.2 16.4 6.2 22.6 0l25.4-25.4c6.2-6.2 6.2-16.4 0-22.6l-67.9-67.9c-6.2-6.2-16.4-6.2-22.6 0l-25.4 25.4c-6.2 6.2-6.2 16.4 0 22.6l17.7 17.7-6.2 99.4-44.5-44.5c-6.6-6.6-16.3-9.1-25.3-6.5l-33.6 9.6 15.6-62.4c3.9-15.7 18.2-27.1 34.4-27.1h16c17.7 0 32 14.3 32 32 0 4.6 1.1 8.9 3 12.9l36.5 73c2 4 6.1 6.6 10.5 6.6h.4c4.9-.3 9.1-3.7 10.1-8.5l9-45.2c5.3-26.6-11.8-52.6-38.3-58zm-268.4 86.8l47 47c-6.1 27.9-29.9 49.3-59.2 51.9V336h24.8c18.5 0 35.8-8.8 46.7-23.2l12.4-18.6-64-44.8-7.7 45.4zM48 256c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 64c-8.8 0-16-7.2-16-16s7.2-16 16-16 16 7.2 16 16-7.2 16-16 16zm368-64c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 64c-8.8 0-16-7.2-16-16s7.2-16 16-16 16 7.2 16 16-7.2 16-16 16z"/>
             </svg>
         );
 
@@ -66,6 +64,7 @@
             </svg>
         );
         const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
         const FileText = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
         const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
         const Search = (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconBase>;
@@ -83,7 +82,6 @@
         const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const PhoneIcon = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
-        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
         const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
 
         const App = () => {
@@ -105,30 +103,19 @@
             
             // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
-
-            const [colMap, setColMap] = useState({
-                sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: ''
-            });
-
+            const [colMap, setColMap] = useState({ sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: '' });
             const listRefs = useRef({});
 
             useEffect(() => {
                 const savedPhone = localStorage.getItem('targetPhone');
                 if (savedPhone) setTargetPhone(savedPhone);
-                
                 const savedChat = localStorage.getItem('chatSettings');
                 if (savedChat) setChatSettings(JSON.parse(savedChat));
-
+                
                 fetch('id.txt')
-                    .then(res => {
-                        if(res.ok) return res.text();
-                        throw new Error('Dosya yok');
-                    })
-                    .then(text => {
-                        parseIdContent(text, true); 
-                    })
-                    .catch(err => console.log("Otomatik id.txt bulunamadı, manuel mod aktif."));
-
+                    .then(res => { if(res.ok) return res.text(); throw new Error('Dosya yok'); })
+                    .then(text => { parseIdContent(text, true); })
+                    .catch(err => console.log("Otomatik id.txt bulunamadı"));
             }, []);
 
             const saveTargetPhone = (e) => {
@@ -139,27 +126,21 @@
 
             const parseIdContent = (text, isAuto = false) => {
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-                let foundId = '';
-                let foundName = '';
-
+                let foundId = '', foundName = '';
                 lines.forEach(line => {
                     const lower = line.toLowerCase();
-                    if (lower.startsWith('id:') || lower.startsWith('id=')) { foundId = line.split(/[:=]/)[1].trim(); }
-                    else if (lower.startsWith('isim:') || lower.startsWith('name:') || lower.startsWith('ad:')) { foundName = line.split(/[:=]/)[1].trim(); }
+                    if (lower.startsWith('id:') || lower.startsWith('id=')) foundId = line.split(/[:=]/)[1].trim();
+                    else if (lower.startsWith('isim:') || lower.startsWith('name:')) foundName = line.split(/[:=]/)[1].trim();
                 });
-
                 if (!foundId && !foundName && lines.length >= 2) { foundId = lines[0]; foundName = lines[1]; }
-                else if (!foundId && lines.length > 0 && /^\d+$/.test(lines[0])) foundId = lines[0];
-
+                
                 if (foundId || foundName) {
                     const newSettings = { id: foundId, name: foundName };
                     setChatSettings(newSettings);
                     localStorage.setItem('chatSettings', JSON.stringify(newSettings));
                     if (isAuto) setIsAutoLoaded(true);
-                    if (!isAuto) alert(`✅ Bilgiler Yüklendi!\n\nID: ${foundId}\nİsim: ${foundName}`);
-                } else if (!isAuto) {
-                    alert("Dosyadan veri okunamadı.");
-                }
+                    if (!isAuto) alert(`✅ Bilgiler Yüklendi!\nID: ${foundId}\nİsim: ${foundName}`);
+                } else if (!isAuto) alert("Veri okunamadı.");
             };
 
             const handleIdFile = (e) => {
@@ -171,7 +152,6 @@
                 e.target.value = null; 
             };
 
-            // --- DOSYA İŞLEME MANTIĞI ---
             const findHeaderRowIndex = (dataArray) => {
                 let bestIndex = 0, maxScore = 0;
                 for (let i = 0; i < Math.min(dataArray.length, 50); i++) {
@@ -182,8 +162,7 @@
                     if (rowStr.includes('sy') || rowStr.includes('yönetici')) score += 5;
                     if (rowStr.includes('sgs') || rowStr.includes('sorumlu')) score += 5;
                     if (rowStr.includes('warehouse') || rowStr.includes('depo')) score += 4;
-                    if (rowStr.includes('courier') || rowStr.includes('kurye')) score += 3;
-                    if (rowStr.includes('saved by') || rowStr.includes('from:') || rowStr.includes('generated')) score -= 20;
+                    if (rowStr.includes('courier')) score += 3;
                     if (score > maxScore) { maxScore = score; bestIndex = i; }
                 }
                 return bestIndex; 
@@ -198,16 +177,15 @@
                     }
                     return '';
                 };
-                const newMap = {
-                    sy: find(['sy', 'saha yöneticisi', 'yönetici']),
-                    sgs: find(['sgs', 'saha sorumlusu', 'sorumlu']),
+                setColMap({
+                    sy: find(['sy', 'saha yöneticisi']),
+                    sgs: find(['sgs', 'saha sorumlusu']),
                     warehouse: find(['warehouse', 'depo']),
-                    orientation: find(['oryantasyon', 'orientation']),
-                    chat: find(['öğretici sohbetler', 'sohbet', 'chat']),
-                    name: find(['courier name', 'kurye adı', 'ad soyad', 'isim']),
-                    phone: find(['courier gsm', 'telefon', 'gsm'])
-                };
-                setColMap(newMap);
+                    orientation: find(['oryantasyon']),
+                    chat: find(['öğretici sohbetler', 'sohbet']),
+                    name: find(['courier name', 'kurye adı']),
+                    phone: find(['courier gsm', 'telefon'])
+                });
             };
 
             const updateManagerList = (data, mapping) => {
@@ -217,10 +195,7 @@
                     [mapping.sy, mapping.sgs].forEach(key => {
                         if (key && row[key]) {
                             const val = String(row[key]).trim();
-                            const lowerVal = val.toLowerCase();
-                            if (val.length > 2 && val.length < 200 && !lowerVal.includes('saved by') && !lowerVal.includes('from:') && !lowerVal.includes('sidebar') && !lowerVal.includes('http') && !lowerVal.includes(':')) {
-                                managers.add(val);
-                            }
+                            if (val.length > 2 && val.length < 50 && !val.toLowerCase().includes('saved by')) managers.add(val);
                         }
                     });
                 });
@@ -232,7 +207,7 @@
             const processRawDataArray = (rawData) => {
                 try {
                     const headerIdx = findHeaderRowIndex(rawData);
-                    const headers = rawData[headerIdx].map(h => h ? String(h).trim() : `Sütun ${Math.random().toString().substr(2,4)}`);
+                    const headers = rawData[headerIdx].map(h => h ? String(h).trim() : `Sütun`);
                     setAllHeaders(headers);
                     const cleanData = [];
                     for (let i = headerIdx + 1; i < rawData.length; i++) {
@@ -245,7 +220,7 @@
                     setCsvData(cleanData);
                     autoMapColumns(headers); 
                     setLoading(false);
-                } catch (e) { alert("Veri işleme hatası: " + e.message); setLoading(false); }
+                } catch (e) { alert("Veri hatası."); setLoading(false); }
             };
 
             const handleFileUpload = (event) => {
@@ -256,11 +231,9 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = window.XLSX.read(data, { type: 'array' });
+                        const workbook = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         let sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('rapor')) || workbook.SheetNames[0];
-                        const rawData = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
-                        processRawDataArray(rawData);
+                        processRawDataArray(window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 }));
                     } catch (err) { alert("Dosya okunamadı."); setLoading(false); }
                 };
                 reader.readAsArrayBuffer(file);
@@ -278,7 +251,6 @@
                 }, 100);
             };
 
-            // --- VERİ FİLTRELEME ---
             const processedData = useMemo(() => {
                 if (!csvData.length || !searchName) return null;
                 const lowerSearch = searchName.toLocaleLowerCase('tr');
@@ -293,25 +265,21 @@
                     if (!grouped[wh]) grouped[wh] = { total: 0, orientation: { incomplete: [] }, chat: { incomplete: [] } };
                     grouped[wh].total += 1;
                     
-                    const rawOrientVal = String(item[colMap.orientation] || '').trim();
-                    if (rawOrientVal.toLowerCase() !== 'tamamladı') {
-                        grouped[wh].orientation.incomplete.push({
-                            'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawOrientVal === '' || rawOrientVal === '-'
-                        });
-                    }
-                    const rawChatVal = String(item[colMap.chat] || '').trim();
-                    if (rawChatVal.toLowerCase() !== 'tamamladı') {
-                        grouped[wh].chat.incomplete.push({
-                            'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawChatVal === '' || rawChatVal === '-'
-                        });
-                    }
+                    const rawOrientVal = String(item[colMap.orientation] || '').trim().toLowerCase();
+                    if (rawOrientVal !== 'tamamladı') grouped[wh].orientation.incomplete.push({
+                        'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawOrientVal === '' || rawOrientVal === '-'
+                    });
+
+                    const rawChatVal = String(item[colMap.chat] || '').trim().toLowerCase();
+                    if (rawChatVal !== 'tamamladı') grouped[wh].chat.incomplete.push({
+                        'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawChatVal === '' || rawChatVal === '-'
+                    });
                 });
                 return grouped;
             }, [csvData, searchName, colMap]);
 
             const toggleWarehouse = (w) => setExpandedWarehouses(prev => ({...prev, [w]: !prev[w]}));
             
-            // --- WHATSAPP MESAJ ---
             const getWhatsappLink = (phone, type, name = '') => {
                 if (!phone) return '#';
                 let p = String(phone).replace(/\D/g, '');
@@ -371,55 +339,59 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
-                // GÖRSEL MODUNA GEÇ (Görünür hale getir)
+                // Görselleri görünür yap
                 const captureElements = el.querySelectorAll('.show-on-capture');
                 captureElements.forEach(b => b.style.display = 'block');
 
-                // STİL AYARLARI (Görsel Tasarımı)
+                // --- 1. Telefon Numaralarını Gizle ---
+                // Sadece linkleri gizle (telefon numaraları link içinde)
+                const links = el.querySelectorAll('a');
+                links.forEach(a => a.style.display = 'none');
+
+                // STİL AYARLARI
                 el.style.backgroundColor = "#5d3ebc"; // Getir Moru
-                el.style.color = "#ffd300"; // Getir Sarısı
+                el.style.color = "#ffd300"; // Getir Sarısı (Başlıklar)
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
-                el.style.position = "relative"; // Arka plan görseli için
+                el.style.position = "relative"; 
                 
-                // Liste elemanlarının stilini değiştir (Beyaz kutu)
+                // --- 2. Liste Elemanları (Beyaz Kutu & Ortalama) ---
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
-                    li.style.color = "black";
+                    li.style.color = "#44546a"; // İsim Rengi
                     li.style.fontWeight = "bold";
-                    li.style.border = "none";
+                    li.style.border = "2px solid #f29b26"; // Turuncu Çerçeve
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
+                    
+                    // İSİM ORTALAMA
+                    li.style.justifyContent = "center"; 
+                    li.style.textAlign = "center";
                 });
                 
                 // Başlıkların rengini ayarla
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
-                    if(!h.closest('li')) { // Liste içindekilere dokunma
+                    if(!h.closest('li')) { 
                         h.style.color = "#ffd300"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; // Tarih vb.
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; // Link
+                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; 
+                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; 
                         if(h.classList.contains('text-purple-700')) h.style.color = "#ffd300";
+                    } else {
+                        // Liste içi elemanlar
+                         h.style.color = "#44546a";
+                    }
+                    
+                    // --- 3. Tarih Stili (Büyük ve Kalın) ---
+                    if (h.classList.contains('date-label')) {
+                        h.style.fontSize = '24px'; 
+                        h.style.fontWeight = '900'; 
                     }
                 });
-                
-                // Linkleri düz metin gibi göster
-                const links = el.querySelectorAll('a');
-                links.forEach(a => {
-                    a.dataset.originalStyle = a.getAttribute('style') || '';
-                    a.style.display = 'inline-block';
-                    a.style.backgroundColor = 'transparent';
-                    a.style.border = 'none';
-                    a.style.color = '#333'; // Beyaz kutu içinde koyu renk
-                    a.style.textDecoration = 'none';
-                    a.style.fontSize = '12px';
-                    const icon = a.querySelector('svg');
-                    if(icon) icon.style.display = 'none';
-                });
 
-                // ÖNEMLİ: Tarayıcının render etmesi için küçük bir bekleme
+                // RENDER BEKLEME
                 await new Promise(r => setTimeout(r, 200));
 
                 try {
@@ -442,25 +414,27 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     el.style.borderRadius = originalBorderRadius;
                     
                     icons.forEach(i => i.style.display = '');
-                    // Görselleri gizle
                     captureElements.forEach(b => b.style.display = 'none');
-                    
+                    links.forEach(a => a.style.display = ''); // Numaraları geri getir
+
                     listItems.forEach(li => {
-                        li.style.backgroundColor = ""; // class'tan gelen renge dön
+                        li.style.backgroundColor = ""; 
                         li.style.color = "";
                         li.style.fontWeight = "";
                         li.style.border = "";
                         li.style.marginBottom = "";
                         li.style.borderRadius = "";
                         li.style.padding = "";
+                        li.style.justifyContent = "";
+                        li.style.textAlign = "";
                     });
 
-                    headers.forEach(h => h.style.color = "");
-                    
-                    links.forEach(a => {
-                        a.setAttribute('style', a.dataset.originalStyle || '');
-                        const icon = a.querySelector('svg');
-                        if(icon) icon.style.display = '';
+                    headers.forEach(h => {
+                        h.style.color = "";
+                        if (h.classList.contains('date-label')) {
+                             h.style.fontSize = "";
+                             h.style.fontWeight = "";
+                        }
                     });
                 }
             };
@@ -478,6 +452,39 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 link.download = getFileName(whName);
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+            };
+
+            const handleShareText = (whName) => {
+                const data = processedData[whName];
+                const currentList = activeTab === 'orientation' ? data.orientation.incomplete : data.chat.incomplete;
+                if (!currentList || !currentList.length) return;
+                const dateStr = new Date().toLocaleDateString('tr-TR');
+                const typeStr = activeTab === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbet';
+                let message = `*${whName} - ${typeStr} Eksik Kurye Listesi (${dateStr})*\n\n`;
+                currentList.forEach((c, i) => message += `${i + 1}. ${c['Courier Name']} (${c['Courier Gsm']})\n`);
+                message += `\n*Toplam Eksik:* ${currentList.length} Kişi`;
+                let url = targetPhone ? `https://wa.me/${targetPhone.replace(/\D/g, '').replace(/^0/, '90')}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+            };
+
+            const handleShareImage = async (whName) => {
+                const canvas = await createScreenshot(whName);
+                if (!canvas) return;
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], getFileName(whName), { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try { await navigator.share({ files: [file] }); } catch (e) {}
+                    } else {
+                         try {
+                            const item = new ClipboardItem({ 'image/png': blob });
+                            await navigator.clipboard.write([item]);
+                            if (confirm("Görsel panoya kopyalandı! WhatsApp Web açılsın mı?")) window.open("https://web.whatsapp.com", "_blank");
+                        } catch (err) {
+                            alert("Otomatik kopyalama yapılamadı. Görsel indiriliyor.");
+                            handleDownloadSingle(whName);
+                        }
+                    }
+                }, 'image/png');
             };
 
             const downloadAll = async () => {
@@ -498,6 +505,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 alert("Tüm indirmeler tamamlandı!");
             };
 
+            // Geçerli ayı Türkçe olarak al
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
 
             if (hasError) {
@@ -519,7 +527,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v38 (Yazı Logo + Kurye)
+                                Eğitim Takip Asistanı v24.3 (Final Fix)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -532,24 +540,16 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                             <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:text-slate-700'}`}>Öğretici Sohbetler</button>
                         </div>
 
-                        {/* EĞİTİM BİLGİ GİRİŞİ (TXT UPLOAD ve MANUEL) */}
+                        {/* EĞİTİM BİLGİ GİRİŞİ */}
                         {activeTab === 'chat' && (
                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in relative">
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="font-bold text-purple-800 flex items-center gap-2"><FileUp size={16}/> Eğitim Bilgileri</h3>
-                                    
-                                    {/* TXT Yükleme Butonu */}
                                     <div className="relative">
                                         <button className="text-xs bg-white px-3 py-1.5 rounded border border-purple-200 text-purple-700 hover:bg-purple-100 font-medium flex items-center gap-1">
                                             <Upload size={12}/> Bilgi Dosyası Yükle (.txt)
                                         </button>
-                                        <input 
-                                            type="file" 
-                                            accept=".txt" 
-                                            onChange={handleIdFile} 
-                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                                            title="id.txt Yükle"
-                                        />
+                                        <input type="file" accept=".txt" onChange={handleIdFile} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" title="id.txt Yükle"/>
                                     </div>
                                 </div>
                                 {chatSettings.id && chatSettings.name && (
@@ -691,27 +691,25 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                         
                                                         {/* LOGO (Görsel Modu İçin - INLINE SVG) */}
                                                         <div 
-                                                            className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 z-20 w-32 text-center"
-                                                        >
-                                                            <GetirTextLogo className="w-full text-center" />
-                                                        </div>
+                                                            className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-24 z-20"
+                                                            dangerouslySetInnerHTML={{ __html: GETIR_LOGO_SVG.replace('data:image/svg+xml;base64,', '').split(',').length > 1 ? atob(GETIR_LOGO_SVG.split(',')[1]) :  decodeURIComponent(GETIR_LOGO_SVG.split(',')[1])}}
+                                                        ></div>
 
                                                         {/* ARKA PLAN GÖRSELİ (3D Kurye - INLINE SVG) */}
                                                         <div 
                                                             className="show-on-capture hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
                                                             style={{transform: 'translate(20%, 20%)'}}
-                                                        >
-                                                             <CourierIcon className="w-full h-full" />
-                                                        </div>
+                                                            dangerouslySetInnerHTML={{ __html: COURIER_SVG.replace('data:image/svg+xml;base64,', '').split(',').length > 1 ? atob(COURIER_SVG.split(',')[1]) : decodeURIComponent(COURIER_SVG.split(',')[1])}}
+                                                        ></div>
 
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
-                                                            <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500">{new Date().toLocaleDateString('tr-TR')}</span></div>
+                                                            <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500 date-label">{new Date().toLocaleDateString('tr-TR')}</span></div>
                                                             <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Sohbet Eksik'}</h5>
                                                         </div>
                                                         <ul className="space-y-2 relative z-10">
                                                             {currentData.incomplete.map((c, i) => (
                                                                 <li key={i} className="text-sm text-slate-700 bg-red-50 p-2 md:p-3 rounded flex justify-between items-center border border-red-100">
-                                                                    <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-2 w-full justify-center">
                                                                         <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
                                                                         {c.isBlank && (
                                                                             <div className="tooltip-container relative hide-on-capture">
@@ -723,7 +721,8 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
+                                                                    {/* TELEFON NUMARASI LİNKİ (Görsel modunda gizlenecek) */}
+                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline ml-auto"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
                                                                 </li>
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
