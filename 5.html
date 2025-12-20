@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v24.1 (Numarasız Görsel)</title>
+    <title>Eğitim Takip Asistanı v24.2 (Görsel Düzenlendi)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -94,7 +94,6 @@
             const [allHeaders, setAllHeaders] = useState([]);
             const [targetPhone, setTargetPhone] = useState('');
             const [isAutoLoaded, setIsAutoLoaded] = useState(false);
-            const [hasError, setHasError] = useState(false);
             
             // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
@@ -119,7 +118,7 @@
                         throw new Error('Dosya yok');
                     })
                     .then(text => {
-                        parseIdContent(text, true); 
+                        parseIdContent(text, true); // true = sessiz mod (alert yok)
                     })
                     .catch(err => console.log("Otomatik id.txt bulunamadı, manuel mod aktif."));
 
@@ -136,12 +135,14 @@
                 let foundId = '';
                 let foundName = '';
 
+                // Strateji 1: Etiketli okuma
                 lines.forEach(line => {
                     const lower = line.toLowerCase();
                     if (lower.startsWith('id:') || lower.startsWith('id=')) { foundId = line.split(/[:=]/)[1].trim(); }
                     else if (lower.startsWith('isim:') || lower.startsWith('name:') || lower.startsWith('ad:')) { foundName = line.split(/[:=]/)[1].trim(); }
                 });
 
+                // Strateji 2: Sıralı okuma
                 if (!foundId && !foundName && lines.length >= 2) { foundId = lines[0]; foundName = lines[1]; }
                 else if (!foundId && lines.length > 0 && /^\d+$/.test(lines[0])) foundId = lines[0];
 
@@ -367,15 +368,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 
                 // Screenshot öncesi görünür olacak elemanlar (Arka plan görseli vb.)
                 const bgImage = el.querySelectorAll('.capture-bg-image');
-                const captureLogo = el.querySelectorAll('.capture-logo');
                 bgImage.forEach(b => b.style.display = 'block');
-                captureLogo.forEach(b => b.style.display = 'block');
-                
-                // *** NUMARALAR GİZLENİYOR ***
-                const links = el.querySelectorAll('a');
-                links.forEach(a => {
-                   a.style.display = 'none'; // Tamamen gizle (liste yapısı bozulmadan)
-                });
 
                 // STİL AYARLARI (Görsel Tasarımı)
                 el.style.backgroundColor = "#5d3ebc"; // Getir Moru
@@ -388,12 +381,16 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
-                    li.style.color = "black";
+                    li.style.color = "#44546a"; // İsim rengi
                     li.style.fontWeight = "bold";
-                    li.style.border = "none";
+                    li.style.border = "2px solid #f29b26"; // Turuncu çerçeve
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
+                    
+                    // Ortalama
+                    li.style.justifyContent = "center"; 
+                    li.style.textAlign = "center";
                 });
                 
                 // Başlıkların rengini ayarla
@@ -404,9 +401,16 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; // Tarih vb.
                         if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; // Link
                         if(h.classList.contains('text-purple-700')) h.style.color = "#ffd300";
+                    } else {
+                         // Liste içi elemanlar (span vb.)
+                         h.style.color = "#44546a";
                     }
                 });
                 
+                // Beyaz link rengini düzelt (eğer varsa)
+                const links = el.querySelectorAll('a');
+                // links.forEach(a => a.style.display = 'none'); // WhatsApp butonlarını görselde gizle
+
                 try {
                     const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: "#5d3ebc", useCORS: true });
                     return canvas;
@@ -419,11 +423,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     
                     icons.forEach(i => i.style.display = '');
                     bgImage.forEach(b => b.style.display = 'none');
-                    captureLogo.forEach(b => b.style.display = 'none');
                     
-                    // *** NUMARALARI GERİ GETİR ***
-                    links.forEach(a => a.style.display = '');
-
                     listItems.forEach(li => {
                         li.style.backgroundColor = ""; // class'tan gelen renge dön
                         li.style.color = "";
@@ -432,9 +432,12 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         li.style.marginBottom = "";
                         li.style.borderRadius = "";
                         li.style.padding = "";
+                        li.style.justifyContent = "";
+                        li.style.textAlign = "";
                     });
 
                     headers.forEach(h => h.style.color = "");
+                    // links.forEach(a => a.style.display = '');
                 }
             };
 
@@ -507,18 +510,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
             // Geçerli ayı Türkçe olarak al
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
 
-            if (hasError) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-red-50 p-4 text-center">
-                        <div>
-                            <h1 className="text-2xl font-bold text-red-600 mb-2">Bir Hata Oluştu!</h1>
-                            <p className="text-slate-600 mb-4">Görsel oluşturulurken bir sorun çıktı. Sayfayı yenileyip tekrar deneyin.</p>
-                            <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-6 py-2 rounded-lg">Yenile</button>
-                        </div>
-                    </div>
-                );
-            }
-
             return (
                 <div className="min-h-screen bg-slate-50 p-4 font-sans text-slate-800 pb-24">
                     <div className="max-w-5xl mx-auto space-y-6">
@@ -526,7 +517,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v24.1 (Numarasız Görsel)
+                                Eğitim Takip Asistanı v24.2 (Görsel Düzenlendi)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -704,7 +695,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
 
                                                         {/* ARKA PLAN GÖRSELİ (3D Kurye - INLINE SVG) */}
                                                         <div 
-                                                            className="show-on-capture hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
+                                                            className="capture-bg-image hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
                                                             style={{transform: 'translate(20%, 20%)'}}
                                                             dangerouslySetInnerHTML={{ __html: COURIER_SVG.replace('data:image/svg+xml;base64,', '').split(',').length > 1 ? atob(COURIER_SVG.split(',')[1]) : decodeURIComponent(COURIER_SVG.split(',')[1])}}
                                                         ></div>
@@ -716,7 +707,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                         <ul className="space-y-2 relative z-10">
                                                             {currentData.incomplete.map((c, i) => (
                                                                 <li key={i} className="text-sm text-slate-700 bg-red-50 p-2 md:p-3 rounded flex justify-between items-center border border-red-100">
-                                                                    <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-2 w-full justify-center">
                                                                         <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
                                                                         {c.isBlank && (
                                                                             <div className="tooltip-container relative hide-on-capture">
@@ -728,7 +719,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
+                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline ml-auto"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
                                                                 </li>
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
