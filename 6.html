@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v24.3 (Final Fix)</title>
+    <title>Eğitim Takip Asistanı v24.3 (Fix & Style)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,7 +39,7 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- GÖRSEL BİLEŞENLERİ (INLINE SVG - Çökme Yapmaz) ---
+        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ (INLINE SVG - Çökme Yapmaz) ---
         // Bu yöntemle resimler kodun içinde çizim olarak bulunur, dosya yükleme hatası olmaz.
 
         const GetirLogo = ({ className, style }) => (
@@ -61,6 +61,7 @@
             </svg>
         );
         const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
         const FileText = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
         const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
         const Search = (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconBase>;
@@ -78,7 +79,6 @@
         const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const PhoneIcon = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
-        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
         const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
 
         const App = () => {
@@ -291,7 +291,7 @@
                     
                     const rawOrientVal = String(item[colMap.orientation] || '').trim();
                     if (rawOrientVal.toLowerCase() !== 'tamamladı') {
-                        grouped[wh.orientation.incomplete.push({
+                        grouped[wh].orientation.incomplete.push({
                             'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawOrientVal === '' || rawOrientVal === '-'
                         });
                     }
@@ -355,6 +355,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 return `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
             };
 
+            // --- GÖRSEL OLUŞTURMA VE İNDİRME ---
             const createScreenshot = async (whName) => {
                 if (!listRefs.current[whName]) return null;
                 const el = listRefs.current[whName];
@@ -367,57 +368,57 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
-                // Görselleri görünür yap (display: block)
+                // Görselleri görünür yap
                 const captureElements = el.querySelectorAll('.show-on-capture');
                 captureElements.forEach(b => b.style.display = 'block');
 
-                // STİL AYARLARI (Görsel Tasarımı)
-                el.style.backgroundColor = "#5d3ebc"; // Getir Moru
-                el.style.color = "#ffd300"; // Getir Sarısı
+                // TELEFON NUMARALARINI GİZLE (Sadece görsel oluşturulurken)
+                const links = el.querySelectorAll('a');
+                links.forEach(a => a.style.display = 'none');
+
+                // STİL AYARLARI
+                el.style.backgroundColor = "#5d3ebc"; 
+                el.style.color = "#ffd300"; 
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
-                el.style.position = "relative"; // Arka plan görseli için
+                el.style.position = "relative"; 
                 
-                // Liste elemanlarının stilini değiştir (Beyaz kutu)
+                // LİSTE ELEMANLARI (BEYAZ KUTULAR)
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
-                    li.style.color = "#44546a"; // İsim Rengi (Koyu Gri)
+                    li.style.color = "#44546a"; // İSİM RENGİ
                     li.style.fontWeight = "bold";
-                    li.style.border = "2px solid #f29b26"; // Turuncu Çerçeve
+                    li.style.border = "2px solid #f29b26"; // TURUNCU ÇERÇEVE
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
                     
-                    // İsim Soyismi ORTALA
+                    // İSİMLERİ ORTALA
                     li.style.justifyContent = "center"; 
                     li.style.textAlign = "center";
                 });
                 
-                // Başlıkların rengini ayarla
+                // BAŞLIKLAR
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
-                    if(!h.closest('li')) { // Liste içindekilere dokunma
+                    if(!h.closest('li')) { 
                         h.style.color = "#ffd300"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; // Tarih vb.
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; // Link
+                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; 
+                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; 
                         if(h.classList.contains('text-purple-700')) h.style.color = "#ffd300";
+                    } else {
+                         h.style.color = "#44546a"; // Liste içi
                     }
                     
-                    // TARİH STİLİ (Daha büyük ve kalın)
+                    // TARİH: DAHA BÜYÜK VE KALIN
                     if (h.classList.contains('date-label')) {
-                        h.style.fontSize = '24px'; // Büyüt
-                        h.style.fontWeight = '900'; // Kalınlaştır
+                        h.style.fontSize = '24px'; 
+                        h.style.fontWeight = '900'; 
                     }
                 });
-                
-                // Linkleri düz metin gibi göster
-                const links = el.querySelectorAll('a');
-                links.forEach(a => {
-                    a.style.display = 'none'; // Tamamen gizle
-                });
 
-                // ÖNEMLİ: Tarayıcının render etmesi için küçük bir bekleme
+                // RENDER BEKLEME (Çökme önleyici)
                 await new Promise(r => setTimeout(r, 200));
 
                 try {
@@ -441,17 +442,18 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     
                     icons.forEach(i => i.style.display = '');
                     captureElements.forEach(b => b.style.display = 'none');
-                    
+                    links.forEach(a => a.style.display = ''); // Linkleri geri getir
+
                     listItems.forEach(li => {
-                        li.style.backgroundColor = ""; // class'tan gelen renge dön
+                        li.style.backgroundColor = ""; 
                         li.style.color = "";
                         li.style.fontWeight = "";
                         li.style.border = "";
                         li.style.marginBottom = "";
                         li.style.borderRadius = "";
                         li.style.padding = "";
-                        li.style.justifyContent = ""; // Reset
-                        li.style.textAlign = "";    // Reset
+                        li.style.justifyContent = "";
+                        li.style.textAlign = "";
                     });
 
                     headers.forEach(h => {
@@ -461,8 +463,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                              h.style.fontWeight = "";
                         }
                     });
-                    
-                    links.forEach(a => a.style.display = ''); // Geri getir
                 }
             };
 
@@ -554,7 +554,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v24.3 (Fix & Style)
+                                Eğitim Takip Asistanı v24.3 (Final Fix)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
