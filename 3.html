@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v24.5 (Kararlı Fix)</title>
+    <title>Eğitim Takip Asistanı v24.5 (Stabil & Ekipmanlı)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,7 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- Google Font (Getir Fontuna Benzer) -->
+    <!-- Font (Getir Fontuna Benzer) -->
     <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
 
     <!-- AYARLAR -->
@@ -34,10 +34,12 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-scale-in { animation: scaleIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
         
-        /* Font */
+        /* Özel Font Sınıfı */
         .font-getir { font-family: 'Varela Round', sans-serif; letter-spacing: -2px; }
     </style>
 </head>
@@ -48,31 +50,42 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- GÖRSEL BİLEŞENLERİ (INLINE SVG - Çökme Yapmaz) ---
+        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ (INLINE SVG) ---
+        // Bu yöntemle resimler kodun içinde çizildiği için "beyaz ekran" veya "çökme" olmaz.
 
-        // Getir Yazı Logosu
+        // 1. Getir Yazı Logosu (Sarı)
         const GetirTextLogo = () => (
-            <div className="font-getir font-bold tracking-tighter" style={{ color: '#ffd10d', fontSize: '80px', lineHeight: '1', textAlign: 'center', width: '100%', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
+            <div className="font-getir font-bold tracking-tighter" 
+                 style={{ 
+                     color: '#ffd10d', 
+                     fontSize: '80px', 
+                     lineHeight: '1', 
+                     textAlign: 'center', 
+                     width: '100%',
+                     textShadow: '1px 1px 2px rgba(0,0,0,0.1)' 
+                 }}>
                 getir
             </div>
         );
 
-        // Güvenlik Ekipmanları Deseni (Hologram Arka Plan - Hafif SVG)
+        // 2. Güvenlik Ekipmanları Deseni (Arka Plan Hologramı)
         const SafetyGearPattern = ({ style }) => (
             <svg style={style} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
                 <defs>
-                    <pattern id="gearPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-                        {/* Kask İkonu */}
-                        <path d="M50 20c-8 0-15 6-15 15 0 8 7 15 15 15s15-7 15-15c0-9-7-15-15-15zm0 22c-4 0-8-3-8-8h16c0 5-4 8-8 8z" fill="#ffffff" opacity="0.1" transform="scale(1.2) translate(-10, -5)"/>
-                        {/* Mont İkonu */}
-                        <path d="M20 70l-8 8v15h6v-12l5-5h20l5 5v12h6v-15l-8-8H20z" fill="#ffffff" opacity="0.1" transform="scale(0.8) translate(10, 10)"/>
+                    <pattern id="gearPattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(25)">
+                        {/* Kask */}
+                        <path d="M40 30c-8.8 0-16 7.2-16 16 0 6.6 4.1 12.2 10 14.6V64h12v-3.4c5.9-2.4 10-8 10-14.6 0-8.8-7.2-16-16-16zm0 24c-4.4 0-8-3.6-8-8h16c0 4.4-3.6 8-8 8z" fill="#ffffff" opacity="0.15"/>
+                        {/* Eldiven */}
+                        <path d="M80 30c-1.1 0-2 .9-2 2v8h-4v-8c0-1.1-.9-2-2-2s-2 .9-2 2v8h-2v-6c0-1.1-.9-2-2-2s-2 .9-2 2v6h-2v-4c0-1.1-.9-2-2-2s-2 .9-2 2v10c0 4.4 3.6 8 8 8h6c4.4 0 8-3.6 8-8V32c0-1.1-.9-2-2-2z" fill="#ffffff" opacity="0.15"/>
+                        {/* Mont */}
+                        <path d="M40 80l-10 10v20h4v-16l6-6h20l6 6v16h4V90l-10-10H40z" fill="#ffffff" opacity="0.15"/>
                     </pattern>
                 </defs>
                 <rect width="100%" height="100%" fill="url(#gearPattern)" />
             </svg>
         );
 
-        // --- İKONLAR ---
+        // --- İKONLAR (Lucide) ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -349,41 +362,36 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const originalPadding = el.style.padding;
                 const originalBorderRadius = el.style.borderRadius;
                 
-                // İkonları gizle
+                // GİZLEME VE GÖSTERME
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
-                // Görselleri görünür yap
                 const captureElements = el.querySelectorAll('.show-on-capture');
                 captureElements.forEach(b => b.style.display = 'block');
 
-                // Telefon Numaralarını GİZLE
                 const links = el.querySelectorAll('li > a');
                 links.forEach(a => a.style.display = 'none');
 
                 // STİL AYARLARI
-                el.style.backgroundColor = "#5d3ebc"; // Mor
-                el.style.color = "#ffd10d"; // Sarı
+                el.style.backgroundColor = "#5d3ebc"; 
+                el.style.color = "#ffd10d"; 
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
                 el.style.position = "relative"; 
                 
-                // Liste elemanları (Beyaz kutu)
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
-                    li.style.color = "#44546a"; // Koyu Gri
+                    li.style.color = "#44546a"; 
                     li.style.fontWeight = "bold";
-                    li.style.border = "2px solid #f29b26"; // Turuncu Çerçeve
+                    li.style.border = "2px solid #f29b26"; 
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
-                    // ORTALA
                     li.style.justifyContent = "center"; 
                     li.style.textAlign = "center";
                 });
                 
-                // Başlıklar
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
                     if(!h.closest('li')) { 
@@ -392,19 +400,15 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         if(h.classList.contains('text-blue-600')) h.style.color = "#ffd10d";
                         if(h.classList.contains('text-purple-700')) h.style.color = "#ffd10d";
                     } else {
-                        // Liste içi isim rengi
-                        h.style.color = "#44546a";
+                         h.style.color = "#44546a"; // Liste içi
                     }
-
-                    // BÜYÜK VE KALIN TARİH
                     if (h.classList.contains('date-label')) {
                         h.style.fontSize = '24px'; 
                         h.style.fontWeight = '900'; 
                     }
                 });
 
-                // Render bekle
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 200));
 
                 try {
                     const canvas = await window.html2canvas(el, { 
@@ -419,6 +423,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     setHasError(true);
                     return null;
                 } finally {
+                    // GERİ AL
                     el.style.backgroundColor = originalBg;
                     el.style.color = originalColor;
                     el.style.padding = originalPadding;
@@ -426,7 +431,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     
                     icons.forEach(i => i.style.display = '');
                     captureElements.forEach(b => b.style.display = 'none');
-                    links.forEach(a => a.style.display = ''); // Numaraları geri getir
+                    links.forEach(a => a.style.display = '');
 
                     listItems.forEach(li => {
                         li.style.backgroundColor = ""; 
@@ -516,7 +521,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 alert("Tüm indirmeler tamamlandı!");
             };
 
-            // Geçerli ayı Türkçe olarak al
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
 
             if (hasError) {
@@ -680,8 +684,8 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                         <div className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-32 z-20">
                                                             <GetirTextLogo />
                                                         </div>
-                                                        <div className="show-on-capture hidden absolute top-0 left-0 w-full h-full z-0 opacity-20 pointer-events-none">
-                                                             <SafetyGearHologram className="w-full h-full" />
+                                                        <div className="show-on-capture hidden absolute top-0 left-0 w-full h-full z-0 opacity-10 pointer-events-none">
+                                                             <SafetyGearPattern className="w-full h-full" />
                                                         </div>
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
                                                             <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500 date-label">{new Date().toLocaleDateString('tr-TR')}</span></div>
