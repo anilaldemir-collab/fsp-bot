@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v43 (Final Stabil)</title>
+    <title>Eğitim Takip Asistanı v44 (Güvenlik Ekipmanlı)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +31,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-scale-in { animation: scaleIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
     </style>
 </head>
@@ -42,18 +44,28 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- GÖRSEL BİLEŞENLERİ (SAF SVG) ---
-        // Base64 decoding yerine doğrudan SVG kodu kullanarak çökme sorununu engelliyoruz.
-
+        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ (INLINE SVG) ---
+        
         const GetirLogo = ({ className, style }) => (
             <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
                 <path fill="#FFD300" d="M26.2 43.8c-3.1 0-5.8-1.5-7.3-3.9-1.2 2.4-3.6 3.9-6.8 3.9-4.8 0-8.2-3.6-8.2-8.6V20.8h6.2v13.6c0 1.9 1.1 3.1 3 3.1 1.7 0 3.1-1.3 3.1-3.2V20.8h6.2v13.8c0 2 1.3 3.3 3.2 3.3 1.9 0 3.1-1.3 3.1-3.2V20.8h6.2v14.4c-.1 4.9-3.8 8.6-8.7 8.6zM61.9 26.6h-9.9v-5.8h9.9v5.8zm0 16.8h-9.9V28.8h9.9v14.6zM88.7 43.8c-4.8 0-8.6-3.8-8.6-8.6V20.8h6.2v13.8c0 1.9 1.3 3.1 3.1 3.1 1.6 0 2.9-1.1 2.9-3V16h6.2v19.1c.1 4.9-3.6 8.7-9.8 8.7zM116.3 43.4h-6.2V16h6.2v27.4zM116.3 12.8h-6.2V7h6.2v5.8zM146.4 25.8c-1.1-3.1-4.2-5.3-7.8-5.3-4.8 0-8.5 3.8-8.5 8.7 0 4.8 3.6 8.6 8.5 8.6 3.4 0 6.4-1.9 7.7-4.8l5.5 2.5c-2.4 4.6-7.3 7.8-13.1 7.8-8.3 0-14.8-6.4-14.8-14.1s6.5-14.1 14.8-14.1c6.1 0 11.2 3.5 13.5 8.5l-5.8 2.2z"/>
             </svg>
         );
 
-        const CourierIllustration = ({ className, style }) => (
-            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="white">
-                <path d="M416 208c0-44.2-35.8-80-80-80h-16c-37.5 0-69.3 25.8-77.8 60.8l-18.2 72.8-21.8 15.3c-28.7 20.1-48.2 51.5-54.6 86.1H128v40c0 4.4 3.6 8 8 8h32c4.4 0 8-3.6 8-8v-29.6c8.5 2.8 17.5 4.3 26.8 4.3 43.6 0 79.8-32.2 86.8-74.2l3.4-21.8 20.1-10c7.8-3.9 12.9-11.9 12.9-20.7v-14.2l20.5 20.5c7.6 7.6 21 2.9 21.6-7.8l5.3-84.6 42.7 42.7c6.2 6.2 16.4 6.2 22.6 0l25.4-25.4c6.2-6.2 6.2-16.4 0-22.6l-67.9-67.9c-6.2-6.2-16.4-6.2-22.6 0l-25.4 25.4c-6.2 6.2-6.2 16.4 0 22.6l17.7 17.7-6.2 99.4-44.5-44.5c-6.6-6.6-16.3-9.1-25.3-6.5l-33.6 9.6 15.6-62.4c3.9-15.7 18.2-27.1 34.4-27.1h16c17.7 0 32 14.3 32 32 0 4.6 1.1 8.9 3 12.9l36.5 73c2 4 6.1 6.6 10.5 6.6h.4c4.9-.3 9.1-3.7 10.1-8.5l9-45.2c5.3-26.6-11.8-52.6-38.3-58zm-268.4 86.8l47 47c-6.1 27.9-29.9 49.3-59.2 51.9V336h24.8c18.5 0 35.8-8.8 46.7-23.2l12.4-18.6-64-44.8-7.7 45.4zM48 256c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 64c-8.8 0-16-7.2-16-16s7.2-16 16-16 16 7.2 16 16-7.2 16-16 16zm368-64c-26.5 0-48 21.5-48 48s21.5 48 48 48 48-21.5 48-48-21.5-48-48-48zm0 64c-8.8 0-16-7.2-16-16s7.2-16 16-16 16 7.2 16 16-7.2 16-16 16z"/>
+        // Güvenlik Ekipmanları Deseni (Hologram)
+        const SafetyGearPattern = ({ className, style }) => (
+            <svg className={className} style={style} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                <defs>
+                    <pattern id="gearPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                        {/* Kask */}
+                        <path d="M20 20c-5 0-9 4-9 9 0 5 4 9 9 9s9-4 9-9c0-5-4-9-9-9zm0 14c-2.7 0-5-2.2-5-5h10c0 2.8-2.2 5-5 5z" fill="#ffffff" opacity="0.15" transform="translate(10, 10) scale(1.5)"/>
+                        {/* Eldiven */}
+                        <path d="M60 20c-2 0-3 2-3 4v6h2v-6c0-1 1-2 2-2s2 1 2 2v6h2v-6c0-2-1-4-3-4z m-6 6v8c0 2 2 4 4 4h8c2 0 4-2 4-4v-8h-16z" fill="#ffffff" opacity="0.15" transform="translate(10, 10) scale(1.5)"/>
+                        {/* Mont */}
+                        <path d="M20 70l-5 5v10h4v-8l3-3h16l3 3v8h4v-10l-5-5H20z" fill="#ffffff" opacity="0.15" transform="translate(10, 10) scale(1.5)"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#gearPattern)" />
             </svg>
         );
 
@@ -101,7 +113,6 @@
             const [isAutoLoaded, setIsAutoLoaded] = useState(false);
             const [hasError, setHasError] = useState(false);
             
-            // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
             const [colMap, setColMap] = useState({ sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: '' });
             const listRefs = useRef({});
@@ -335,63 +346,57 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const originalPadding = el.style.padding;
                 const originalBorderRadius = el.style.borderRadius;
                 
-                // Screenshot öncesi gizlenecek elemanlar
+                // 1. İkonları gizle
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
-                // Görselleri görünür yap
+                // 2. Görselleri görünür yap
                 const captureElements = el.querySelectorAll('.show-on-capture');
                 captureElements.forEach(b => b.style.display = 'block');
 
-                // --- 1. Telefon Numaralarını Gizle ---
-                // Sadece linkleri gizle (telefon numaraları link içinde)
-                const links = el.querySelectorAll('a');
+                // 3. Telefon Linklerini Gizle
+                const links = el.querySelectorAll('li > a');
                 links.forEach(a => a.style.display = 'none');
 
-                // STİL AYARLARI
-                el.style.backgroundColor = "#5d3ebc"; // Getir Moru
-                el.style.color = "#ffd300"; // Getir Sarısı (Başlıklar)
+                // 4. Stilleri Uygula
+                el.style.backgroundColor = "#5d3ebc"; 
+                el.style.color = "#ffd300"; 
                 el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
                 el.style.position = "relative"; 
                 
-                // --- 2. Liste Elemanları (Beyaz Kutu & Ortalama) ---
+                // Liste elemanları
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
-                    li.style.color = "#44546a"; // İsim Rengi
+                    li.style.color = "#44546a"; 
                     li.style.fontWeight = "bold";
-                    li.style.border = "2px solid #f29b26"; // Turuncu Çerçeve
+                    li.style.border = "2px solid #f29b26"; 
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
-                    
-                    // İSİM ORTALAMA
+                    // Ortala
                     li.style.justifyContent = "center"; 
                     li.style.textAlign = "center";
                 });
                 
-                // Başlıkların rengini ayarla
+                // Başlıklar
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
                     if(!h.closest('li')) { 
                         h.style.color = "#ffd300"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; 
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; 
+                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300";
+                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300";
                         if(h.classList.contains('text-purple-700')) h.style.color = "#ffd300";
-                    } else {
-                        // Liste içi elemanlar
-                         h.style.color = "#44546a";
                     }
-                    
-                    // --- 3. Tarih Stili (Büyük ve Kalın) ---
+                    // Tarih Stili
                     if (h.classList.contains('date-label')) {
                         h.style.fontSize = '24px'; 
                         h.style.fontWeight = '900'; 
                     }
                 });
 
-                // RENDER BEKLEME
+                // Render bekle
                 await new Promise(r => setTimeout(r, 200));
 
                 try {
@@ -454,39 +459,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 link.click();
             };
 
-            const handleShareText = (whName) => {
-                const data = processedData[whName];
-                const currentList = activeTab === 'orientation' ? data.orientation.incomplete : data.chat.incomplete;
-                if (!currentList || !currentList.length) return;
-                const dateStr = new Date().toLocaleDateString('tr-TR');
-                const typeStr = activeTab === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbet';
-                let message = `*${whName} - ${typeStr} Eksik Kurye Listesi (${dateStr})*\n\n`;
-                currentList.forEach((c, i) => message += `${i + 1}. ${c['Courier Name']} (${c['Courier Gsm']})\n`);
-                message += `\n*Toplam Eksik:* ${currentList.length} Kişi`;
-                let url = targetPhone ? `https://wa.me/${targetPhone.replace(/\D/g, '').replace(/^0/, '90')}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
-                window.open(url, '_blank');
-            };
-
-            const handleShareImage = async (whName) => {
-                const canvas = await createScreenshot(whName);
-                if (!canvas) return;
-                canvas.toBlob(async (blob) => {
-                    const file = new File([blob], getFileName(whName), { type: 'image/png' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try { await navigator.share({ files: [file] }); } catch (e) {}
-                    } else {
-                         try {
-                            const item = new ClipboardItem({ 'image/png': blob });
-                            await navigator.clipboard.write([item]);
-                            if (confirm("Görsel panoya kopyalandı! WhatsApp Web açılsın mı?")) window.open("https://web.whatsapp.com", "_blank");
-                        } catch (err) {
-                            alert("Otomatik kopyalama yapılamadı. Görsel indiriliyor.");
-                            handleDownloadSingle(whName);
-                        }
-                    }
-                }, 'image/png');
-            };
-
             const downloadAll = async () => {
                 if (!processedData) return;
                 setDownloadingAll(true);
@@ -505,7 +477,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 alert("Tüm indirmeler tamamlandı!");
             };
 
-            // Geçerli ayı Türkçe olarak al
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
 
             if (hasError) {
@@ -527,7 +498,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v24.3 (Final Fix)
+                                Eğitim Takip Asistanı v44 (Güvenlik Ekipmanlı)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -562,7 +533,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         )}
 
                         <div className="grid md:grid-cols-2 gap-4">
-                            {/* YÜKLEME ALANI */}
+                            {/* YÜKLEME */}
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative min-h-[200px]">
                                 {inputType === 'upload' ? (
                                     <div className="w-full h-full relative group cursor-pointer flex flex-col items-center justify-center">
@@ -585,7 +556,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 </div>
                             </div>
 
-                            {/* YÖNETİCİ SEÇİMİ VE AYARLAR */}
+                            {/* YÖNETİCİ */}
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-sm font-medium text-slate-600 flex items-center gap-2"><User size={16} /> Yönetici Seçiniz</label>
@@ -595,23 +566,13 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                         </button>
                                     )}
                                 </div>
-                                
                                 {showColumnSettings && (
                                     <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs space-y-2 animate-fade-in">
                                         <p className="font-bold text-blue-800">Sütun Eşleştirmeleri</p>
-                                        {[
-                                            {k:'sy', l:'SY / Yönetici'}, {k:'sgs', l:'SGS / Sorumlu'}, 
-                                            {k:'warehouse', l:'Depo Adı'}, {k:'name', l:'Kurye Adı'}, 
-                                            {k:'phone', l:'Telefon'}, {k:'orientation', l:'Oryantasyon'}, 
-                                            {k:'chat', l:'Sohbet'}
-                                        ].map(field => (
-                                            <div key={field.k} className="flex flex-col">
-                                                <label className="text-blue-600 mb-1">{field.l}</label>
-                                                <select 
-                                                    value={colMap[field.k]} 
-                                                    onChange={(e) => setColMap({...colMap, [field.k]: e.target.value})}
-                                                    className="p-2 border rounded bg-white"
-                                                >
+                                        {['sy', 'sgs', 'warehouse', 'name', 'phone', 'orientation', 'chat'].map(k => (
+                                            <div key={k} className="flex flex-col">
+                                                <label className="text-blue-600 mb-1 uppercase">{k}</label>
+                                                <select value={colMap[k]} onChange={(e) => setColMap({...colMap, [k]: e.target.value})} className="p-2 border rounded bg-white">
                                                     <option value="">Seçilmedi</option>
                                                     {allHeaders.map((h, i) => <option key={i} value={h}>{h}</option>)}
                                                 </select>
@@ -619,7 +580,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                         ))}
                                     </div>
                                 )}
-
                                 <div className="relative mb-3">
                                     <select value={searchName} onChange={e => setSearchName(e.target.value)} disabled={!managerList.length} className="w-full pl-10 pr-8 py-3 bg-slate-50 border rounded-lg appearance-none outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">{managerList.length ? "Listeden Seçiniz..." : "Önce Dosya Yükleyin"}</option>
@@ -628,19 +588,11 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                     <Search className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
                                     <ChevronDown className="absolute right-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
-
                                 <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        value={targetPhone} 
-                                        onChange={saveTargetPhone} 
-                                        placeholder="Raporun Gönderileceği Numara (Opsiyonel)" 
-                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                                    />
+                                    <input type="text" value={targetPhone} onChange={saveTargetPhone} placeholder="Raporun Gönderileceği Numara (Opsiyonel)" className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"/>
                                     <PhoneIcon className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
                                 <p className="text-[10px] text-slate-400 mt-1 pl-1">Numara girerseniz "WhatsApp Listesi" butonu direkt o kişiye gönderir.</p>
-
                                 {managerList.length > 0 && !searchName && <p className="text-xs text-red-500 mt-2 font-bold animate-pulse">👆 Lütfen isminizi seçin!</p>}
                             </div>
                         </div>
@@ -657,7 +609,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                     const incompleteCount = currentData.incomplete.length;
                                     const completedCount = total - incompleteCount;
                                     const completionRate = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-
                                     let rateColor = "text-red-600";
                                     if (completionRate > 10 && completionRate <= 30) rateColor = "text-orange-500";
                                     else if (completionRate > 30 && completionRate <= 60) rateColor = "text-amber-500";
@@ -674,7 +625,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                         <p className="text-xs text-slate-500">Eksik: <span className="font-bold text-red-600">{incompleteCount}</span> / {total}</p>
                                                     </div>
                                                 </div>
-                                                
                                                 <div className="flex items-center gap-4">
                                                      <div className="text-right">
                                                         <span className={`block text-lg font-bold ${rateColor}`}>%{completionRate}</span>
@@ -686,22 +636,13 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
 
                                             {expanded && (
                                                 <div className="border-t border-slate-100 bg-slate-50/50 p-4">
-                                                    {/* Capture Area */}
                                                     <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4 relative overflow-hidden">
-                                                        
-                                                        {/* LOGO (Görsel Modu İçin - INLINE SVG) */}
-                                                        <div 
-                                                            className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-24 z-20"
-                                                            dangerouslySetInnerHTML={{ __html: GETIR_LOGO_SVG.replace('data:image/svg+xml;base64,', '').split(',').length > 1 ? atob(GETIR_LOGO_SVG.split(',')[1]) :  decodeURIComponent(GETIR_LOGO_SVG.split(',')[1])}}
-                                                        ></div>
-
-                                                        {/* ARKA PLAN GÖRSELİ (3D Kurye - INLINE SVG) */}
-                                                        <div 
-                                                            className="show-on-capture hidden absolute bottom-0 right-0 w-64 opacity-20 pointer-events-none z-0" 
-                                                            style={{transform: 'translate(20%, 20%)'}}
-                                                            dangerouslySetInnerHTML={{ __html: COURIER_SVG.replace('data:image/svg+xml;base64,', '').split(',').length > 1 ? atob(COURIER_SVG.split(',')[1]) : decodeURIComponent(COURIER_SVG.split(',')[1])}}
-                                                        ></div>
-
+                                                        <div className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-24 z-20">
+                                                            <GetirLogo className="w-full h-full" />
+                                                        </div>
+                                                        <div className="show-on-capture hidden absolute top-0 left-0 w-full h-full z-0 opacity-10 pointer-events-none">
+                                                             <SafetyGearHologram className="w-full h-full object-cover" />
+                                                        </div>
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
                                                             <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500 date-label">{new Date().toLocaleDateString('tr-TR')}</span></div>
                                                             <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Sohbet Eksik'}</h5>
@@ -711,70 +652,33 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                                 <li key={i} className="text-sm text-slate-700 bg-red-50 p-2 md:p-3 rounded flex justify-between items-center border border-red-100">
                                                                     <div className="flex items-center gap-2 w-full justify-center">
                                                                         <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
-                                                                        {c.isBlank && (
-                                                                            <div className="tooltip-container relative hide-on-capture">
-                                                                                <AlertTriangle size={14} className="text-amber-500 cursor-help" />
-                                                                                <div className="tooltip-text invisible absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-50 text-center">
-                                                                                    Entegrasyonu tamamlanmamış kurye olabilir dikkat!
-                                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
+                                                                        {c.isBlank && <div className="tooltip-container relative hide-on-capture"><AlertTriangle size={14} className="text-amber-500 cursor-help" /><div className="tooltip-text invisible absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-50 text-center">Entegrasyonu tamamlanmamış kurye olabilir dikkat!</div></div>}
                                                                     </div>
-                                                                    {/* TELEFON NUMARASI LİNKİ (Görsel modunda gizlenecek) */}
                                                                     <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline ml-auto"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
                                                                 </li>
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
                                                         </ul>
-
-                                                        {/* ÖĞRETİCİ SOHBETLER İÇİN GÖRSEL ALTI BİLGİ NOTU */}
                                                         {activeTab === 'chat' && (
                                                             <div className="mt-6 pt-4 border-t-2 border-slate-100 text-xs text-slate-700 leading-relaxed relative z-10">
-                                                                <p className="font-bold text-center text-sm text-purple-800 mb-2">
-                                                                    🚀 {currentMonth} Ayı Öğretici Sohbetler Yayında! 🚀
-                                                                </p>
-                                                                <p className="mb-2">
-                                                                    📣 {currentMonth} Ayı Öğretici Sohbetler <span className="font-bold">"{chatSettings.name || 'Eğitim Adı'}"</span> adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler.
-                                                                </p>
-                                                                <p className="mb-4 text-blue-600 font-mono break-all font-bold">
-                                                                    https://www.getirup.com/getirup/eep/main/activity/{chatSettings.id || 'Eğitim ID'}
-                                                                </p>
-                                                                
+                                                                <p className="font-bold text-center text-sm text-purple-800 mb-2">🚀 {currentMonth} Ayı Öğretici Sohbetler Yayında! 🚀</p>
+                                                                <p className="mb-2">📣 {currentMonth} Ayı Öğretici Sohbetler <span className="font-bold">"{chatSettings.name || 'Eğitim Adı'}"</span> adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler.</p>
+                                                                <p className="mb-4 text-blue-600 font-mono break-all font-bold">https://www.getirup.com/getirup/eep/main/activity/{chatSettings.id || 'Eğitim ID'}</p>
                                                                 <p className="font-bold text-slate-800 mb-1 border-b border-slate-200 pb-1">Giriş Yöntemleri 🚨</p>
                                                                 <div className="space-y-2">
-                                                                    <p>
-                                                                        📎 <strong>E.mobil uygulaması</strong> telefonda yüklü olmalı (Google Play Store içerisinde mevcut). Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz.
-                                                                    </p>
+                                                                    <p>📎 <strong>E.mobil uygulaması</strong> telefonda yüklü olmalı. Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz.</p>
                                                                     <p className="font-bold text-center text-slate-400 text-[10px]">- YADA -</p>
-                                                                    <p>
-                                                                        📎 <strong>E.Mobil uygulamasına</strong> giriş yaparak ulaşabilirsiniz.<br/>
-                                                                        <span className="font-semibold text-purple-700">Kurum Kodu:</span> GETIRUP<br/>
-                                                                        <span className="font-semibold text-purple-700">Kullanıcı adı:</span> Telefon numaranız (başında 0 olmadan)<br/>
-                                                                        Parolamı unuttum diyerek yeni parola oluşturabilirsiniz.
-                                                                    </p>
+                                                                    <p>📎 <strong>E.Mobil uygulamasına</strong> giriş yaparak ulaşabilirsiniz.<br/><span className="font-semibold text-purple-700">Kurum Kodu:</span> GETIRUP<br/><span className="font-semibold text-purple-700">Kullanıcı adı:</span> Telefon numaranız (başında 0 olmadan)<br/>Parolamı unuttum diyerek yeni parola oluşturabilirsiniz.</p>
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
                                                     
-                                                    {/* Action Buttons */}
-                                                    {currentData.incomplete.length > 0 && (
-                                                        <div className="flex justify-center gap-2 flex-wrap">
-                                                            <button onClick={() => handleShareText(whName)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-green-600 transition-colors">
-                                                                <MessageSquare size={16}/> 
-                                                                {targetPhone ? 'Kişiye Gönder' : 'WhatsApp Listesi'}
-                                                            </button>
-                                                            
-                                                            <button onClick={() => handleShareImage(whName)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-blue-700 transition-colors">
-                                                                <Copy size={16}/> 
-                                                                <span className="hidden sm:inline">Görsel Kopyala</span>
-                                                                <span className="sm:hidden">Görsel</span>
-                                                            </button>
-
-                                                            <button onClick={() => handleDownloadSingle(whName)} className="bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><Download size={16}/></button>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex justify-center gap-2 flex-wrap">
+                                                        <button onClick={() => handleShareText(whName)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-green-600 transition-colors"><MessageSquare size={16}/> {targetPhone ? 'Kişiye Gönder' : 'WhatsApp Listesi'}</button>
+                                                        <button onClick={() => handleShareImage(whName)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-blue-700 transition-colors"><Copy size={16}/> <span className="hidden sm:inline">Görsel Kopyala</span><span className="sm:hidden">Görsel</span></button>
+                                                        <button onClick={() => handleDownloadSingle(whName)} className="bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><Download size={16}/></button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -783,9 +687,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 
                                 <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-50">
                                     <div className="bg-white p-2 rounded-full shadow-lg border pointer-events-auto">
-                                        <button onClick={downloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-md">
-                                            {downloadingAll ? <Loader className="animate-spin"/> : <Layers size={20}/>} Tümünü İndir
-                                        </button>
+                                        <button onClick={downloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-md">{downloadingAll ? <Loader className="animate-spin"/> : <Layers size={20}/>} Tümünü İndir</button>
                                     </div>
                                 </div>
                             </div>
