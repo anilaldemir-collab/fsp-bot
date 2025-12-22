@@ -127,7 +127,7 @@
             const isViewOnly = savedData.isViewOnly || false;
 
             const [coords, setCoords] = useState(savedData.coords || { lat: 41.077139, lng: 29.030945 });
-            const [inputCoords, setInputCoords] = useState({ lat: coords.lat, lng: coords.lng });
+            const [inputCoords, setInputCoords] = useState({ lat: String(coords.lat), lng: String(coords.lng) });
             const [mapLoaded, setMapLoaded] = useState(false);
             const [isMapLocked, setIsMapLocked] = useState(false);
             const mapInstanceRef = useRef(null);
@@ -160,6 +160,11 @@
             const [analysisReport, setAnalysisReport] = useState(null);
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
+
+            // --- İLK KURULUM (HARİTAYI BAŞLATMAK İÇİN KRİTİK) ---
+            useEffect(() => {
+                setMapLoaded(true);
+            }, []);
 
             // --- YARDIMCI BİLEŞEN: MENÜ ÖĞESİ (İÇ) ---
             const MenuItem = ({ id, title, icon: IconName, children }) => (
@@ -594,7 +599,6 @@
             }, []);
 
             useEffect(() => {
-                setMapLoaded(true);
                 const img = new Image();
                 img.src = 'Screenshot_2025-01-04_at_22.24.03-removebg-preview.png';
                 img.onload = () => setCourierImage(img);
@@ -674,7 +678,7 @@
                 else if (type === 'refuge') { newElement.width = 30; newElement.height = 100; }
                 else if (type === 'arrow') { newElement.width = 40; newElement.height = 80; newElement.color = '#ffffff'; }
                 else if (type === 'road_defect') { newElement.width = 40; newElement.height = 40; }
-                // --- DÜZELTME: YAZI İÇİN GENİŞLİK VE YÜKSEKLİK ---
+                // --- DÜZELTME: YAZI İÇİN HİTBOX ALANI ---
                 else if (type === 'text') { newElement.width = 100; newElement.height = 40; }
                 
                 setElements(prev => [...prev, newElement]); setSelectedId(id); setMode('select');
@@ -1076,7 +1080,7 @@
                                         <div className="help-icon"><Icon name="map-pin"/></div>
                                         <div className="help-content">
                                             <h4>1. Konum Belirleme</h4>
-                                            <p>Harita üzerinde sürükleyerek veya üst bardaki koordinat kutucuklarına girerek kaza mahalline gidin.</p>
+                                            <p>Harita üzerinde sürükleyerek veya üst bardaki koordinat kutucuklarına girerek kaza mahalline gidin. <Icon name="navigation" size={12}/> butonuna basarak konuma odaklanın.</p>
                                         </div>
                                     </div>
                                     <div className="help-step">
