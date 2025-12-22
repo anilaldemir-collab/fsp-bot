@@ -164,6 +164,9 @@
             // --- İLK KURULUM (HARİTAYI BAŞLATMAK İÇİN KRİTİK) ---
             useEffect(() => {
                 setMapLoaded(true);
+                const img = new Image();
+                img.src = 'Screenshot_2025-01-04_at_22.24.03-removebg-preview.png';
+                img.onload = () => setCourierImage(img);
             }, []);
 
             // --- YARDIMCI BİLEŞEN: MENÜ ÖĞESİ (İÇ) ---
@@ -611,6 +614,8 @@
                     mapInstanceRef.current = map;
                     markerRef.current = window.L.marker([coords.lat, coords.lng]).addTo(map);
                     map.on('move', () => {}); map.on('zoom', () => {});
+                    // Boyutları senkronize et
+                    setTimeout(() => map.invalidateSize(), 200);
                 } else if (mapInstanceRef.current) {
                     mapInstanceRef.current.setView([coords.lat, coords.lng]);
                     if (markerRef.current) markerRef.current.setLatLng([coords.lat, coords.lng]);
@@ -678,7 +683,7 @@
                 else if (type === 'refuge') { newElement.width = 30; newElement.height = 100; }
                 else if (type === 'arrow') { newElement.width = 40; newElement.height = 80; newElement.color = '#ffffff'; }
                 else if (type === 'road_defect') { newElement.width = 40; newElement.height = 40; }
-                // --- DÜZELTME: YAZI İÇİN HİTBOX ALANI ---
+                // --- DÜZELTME: YAZI İÇİN SEÇİLEBİLİR ALAN TANIMLANDI ---
                 else if (type === 'text') { newElement.width = 100; newElement.height = 40; }
                 
                 setElements(prev => [...prev, newElement]); setSelectedId(id); setMode('select');
@@ -1231,7 +1236,8 @@
                         )}
 
                         <div className="flex-1 relative bg-gray-200 overflow-hidden">
-                            <div ref={mapContainerRef} className="absolute inset-0 z-0" style={{filter: isMapLocked?'grayscale(30%)':'none'}}></div>
+                            {/* DÜZELTME: h-full w-full eklendi */}
+                            <div ref={mapContainerRef} className="absolute inset-0 z-0 h-full w-full" style={{filter: isMapLocked?'grayscale(30%)':'none'}}></div>
                             
                             {(environment.lighting || environment.weather) && (
                                 <div className="absolute top-4 right-4 z-10 bg-white/90 p-2 rounded shadow border border-slate-200 text-xs pointer-events-none">
