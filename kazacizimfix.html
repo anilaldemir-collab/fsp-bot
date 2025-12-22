@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaza Yeri İnceleme Aracı - Rapor Dosyası</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS (Harita) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- React ve ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Lucide Icons (Global Paket) -->
+    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+    
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #f1f5f9; }
+        canvas { touch-action: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .modal-overlay { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); }
+        .help-step { display: flex; gap: 12px; margin-bottom: 20px; align-items: flex-start; }
+        .help-icon { min-width: 40px; height: 40px; background: #e0f2fe; color: #0369a1; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .help-content h4 { font-weight: bold; color: #0f172a; margin-bottom: 4px; }
+        .help-content p { font-size: 0.85rem; color: #475569; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // --- İKON BİLEŞENİ ---
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const ref = useRef(null);
+            useEffect(() => {
+                if (window.lucide && window.lucide.icons && window.lucide.createElement && ref.current) {
+                    const iconName = name.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+                    const iconDef = window.lucide.icons[iconName];
+                    if (iconDef) {
+                        const svgElement = window.lucide.createElement(iconDef);
+                        svgElement.setAttribute('width', size);
+                        svgElement.setAttribute('height', size);
+                        if (className) svgElement.setAttribute('class', className);
+                        ref.current.innerHTML = '';
+                        ref.current.appendChild(svgElement);
+                    }
+                }
+            }, [name, size, className]);
+            return <span ref={ref} className="inline-flex items-center justify-center" style={{ width: size, height: size }}></span>;
+        };
+
+        // --- YARDIMCI BİLEŞEN: BUTON ELEMENTİ (GLOBAL) ---
+        const ButtonEl = ({onClick, icon, label, color="text-slate-700", bg="hover:bg-gray-50"}) => (
+            <button onClick={onClick} className={`p-1 border rounded flex flex-col items-center justify-center ${bg}`}>
+                <Icon name={icon} size={16} className={color}/>
+                {label && <span className="text-[8px] mt-1">{label}</span>}
+            </button>
+        );
+
+        // --- 3D ARAÇ ÇİZİM YARDIMCILARI ---
+        const adjustColor = (color, amount) => {
+            return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
+        }
+
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        const draw3DCar = (ctx, w, h, color) => {
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 15; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
+            ctx.fillStyle = color; roundRect(ctx, -w/2, -h/2, w, h, 8); ctx.fill();
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+            const roofW = w * 0.85; const roofH = h * 0.5;
+            ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.moveTo(-w/2 + 4, -h/2 + 10); ctx.lineTo(w/2 - 4, -h/2 + 10); ctx.lineTo(roofW/2, -roofH/2); ctx.lineTo(-roofW/2, -roofH/2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(-roofW/2, roofH/2); ctx.lineTo(roofW/2, roofH/2); ctx.lineTo(w/2 - 4, h/2 - 10); ctx.lineTo(-w/2 + 4, h/2 - 10); ctx.fill();
+            try { ctx.fillStyle = adjustColor(color, 40); } catch(e) { ctx.fillStyle = color; } roundRect(ctx, -roofW/2, -roofH/2, roofW, roofH, 5); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(-w/2 + 6, -h/2 + 2, 3, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/2 - 6, -h/2 + 2, 3, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#ef4444'; ctx.fillRect(-w/2 + 4, h/2 - 3, 8, 3); ctx.fillRect(w/2 - 12, h/2 - 3, 8, 3);
+        };
+
+        const draw3DBus = (ctx, w, h, color) => {
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 15; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
+            ctx.fillStyle = color; roundRect(ctx, -w/2, -h/2, w, h, 6); ctx.fill(); ctx.shadowColor = 'transparent';
+            ctx.fillStyle = '#94a3b8'; ctx.fillRect(-w/2 + 2, -h/2 + 2, w - 4, h * 0.15);
+            try { ctx.fillStyle = adjustColor(color, 20); } catch(e) { ctx.fillStyle = '#e2e8f0'; } roundRect(ctx, -w/2 + 3, -h/2 + h*0.15 + 2, w - 6, h * 0.8 - 4, 2); ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.beginPath(); ctx.arc(0, -h/4, 6, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(0, h/4, 6, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#333'; ctx.fillRect(-w/2 - 2, -h/2 + 10, 2, 8); ctx.fillRect(w/2, -h/2 + 10, 2, 8);
+        };
+
+        const draw3DTruck = (ctx, w, h, color) => {
+            const cabH = h * 0.25; ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 3;
+            ctx.fillStyle = color; roundRect(ctx, -w/2, -h/2, w, cabH, 4); ctx.fill();
+            ctx.fillStyle = '#94a3b8'; ctx.fillRect(-w/2 + 3, -h/2 + 5, w - 6, 10);
+            const trailerH = h * 0.7; const trailerW = w + 2; const gap = h * 0.05;
+            ctx.fillStyle = '#e2e8f0'; roundRect(ctx, -trailerW/2, -h/2 + cabH + gap, trailerW, trailerH, 2); ctx.fill();
+            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -h/2 + cabH + gap); ctx.lineTo(0, h/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-trailerW/2, 0); ctx.lineTo(trailerW/2, 0); ctx.stroke();
+            ctx.shadowColor = 'transparent';
+        };
+
+        // --- ANA UYGULAMA ---
+        const MapAccidentSketch = () => {
+            const savedData = window.__ACCIDENT_DATA__ || {};
+            const isViewOnly = savedData.isViewOnly || false;
+
+            const [coords, setCoords] = useState(savedData.coords || { lat: 41.077139, lng: 29.030945 });
+            const [inputCoords, setInputCoords] = useState({ lat: coords.lat, lng: coords.lng });
+            const [mapLoaded, setMapLoaded] = useState(false);
+            const [isMapLocked, setIsMapLocked] = useState(false);
+            const mapInstanceRef = useRef(null);
+            const mapContainerRef = useRef(null);
+            const canvasRef = useRef(null);
+            const markerRef = useRef(null);
+            const mousePosRef = useRef(null); 
+            
+            const [elements, setElements] = useState(savedData.elements || []);
+            const [selectedId, setSelectedId] = useState(null);
+            const [mode, setMode] = useState('pan'); 
+            const [drawingColor, setDrawingColor] = useState('#ef4444');
+            const [drawingWidth, setDrawingWidth] = useState(5);
+            const [dragStart, setDragStart] = useState(null);
+            const [action, setAction] = useState('none');
+            const [screenshotMode, setScreenshotMode] = useState(false);
+            const [openMenu, setOpenMenu] = useState('vehicles'); 
+            const [courierImage, setCourierImage] = useState(null);
+            const [environment, setEnvironment] = useState(savedData.environment || { lighting: '', weather: '' });
+            
+            const [activeRouteId, setActiveRouteId] = useState(null);
+            const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+            // Sokak Görünümü için State'ler
+            const [streetViewMode, setStreetViewMode] = useState(savedData.streetViewMode || 'image'); 
+            const [apiKey, setApiKey] = useState(savedData.apiKey || localStorage.getItem('google_maps_key') || '');
+            const [tempKey, setTempKey] = useState('');
+
+            // Analiz ve Yardım Raporu State'leri
+            const [analysisReport, setAnalysisReport] = useState(null);
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
+
+            // --- YARDIMCI BİLEŞEN: MENÜ ÖĞESİ (İÇ) ---
+            const MenuItem = ({ id, title, icon: IconName, children }) => (
+                <div className="border-b last:border-0">
+                    <button onClick={() => setOpenMenu(openMenu === id ? null : id)} className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition text-left">
+                        <div className="flex items-center gap-2 font-semibold text-sm text-slate-700"><Icon name={IconName} size={16}/> {title}</div>
+                        {openMenu === id ? <Icon name="chevron-down" size={14}/> : <Icon name="chevron-right" size={14}/>}
+                    </button>
+                    {openMenu === id && <div className="p-2 bg-white grid grid-cols-4 gap-2 animate-in slide-in-from-top-1">{children}</div>}
+                </div>
+            );
+
+            // --- ZOOM HANDLERS ---
+            const handleZoomIn = () => {
+                if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
+            };
+            const handleZoomOut = () => {
+                if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
+            };
+
+            const saveApiKey = () => {
+                if(tempKey.trim()) {
+                    setApiKey(tempKey.trim());
+                    localStorage.setItem('google_maps_key', tempKey.trim());
+                }
+            };
+
+            const clearApiKey = () => {
+                setApiKey('');
+                localStorage.removeItem('google_maps_key');
+            };
+
+            // --- GEOMETRİK HESAPLAMA YARDIMCILARI ---
+            const toRad = (deg) => deg * Math.PI / 180;
+            const toDeg = (rad) => rad * 180 / Math.PI;
+
+            const calculateBearing = (lat1, lon1, lat2, lon2) => {
+                const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2));
+                const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+                        Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lon2 - lon1));
+                const brng = toDeg(Math.atan2(y, x));
+                return (brng + 360) % 360;
+            };
+
+            const angleDifference = (a1, a2) => {
+                let diff = Math.abs(a1 - a2) % 360;
+                return diff > 180 ? 360 - diff : diff;
+            };
+
+            const getDirectionFromRotation = (rotation) => {
+                const normalized = (rotation % 360 + 360) % 360;
+                if (normalized >= 315 || normalized < 45) return "Kuzey";
+                if (normalized >= 45 && normalized < 135) return "Doğu";
+                if (normalized >= 135 && normalized < 225) return "Güney";
+                if (normalized >= 225 && normalized < 315) return "Batı";
+                return "Bilinmeyen";
+            };
+
+            const determineCollisionType = (v1, v2, crashPoint = null) => {
+                if (crashPoint) {
+                    const angle1 = calculateBearing(v1.lat, v1.lng, crashPoint.lat, crashPoint.lng);
+                    const angle2 = calculateBearing(v2.lat, v2.lng, crashPoint.lat, crashPoint.lng);
+                    const diff = angleDifference(angle1, angle2);
+                    if (diff >= 150) return "Kafa kafaya çarpışma (Burun buruna)";
+                    if (diff >= 45 && diff < 150) return "Yandan/Dik açılı çarpışma";
+                    if (diff < 45) return "Arkadan çarpma veya Yanal Sürtünme";
+                }
+                const diff = Math.abs(v1.rotation - v2.rotation) % 360;
+                const normalizedDiff = diff > 180 ? 360 - diff : diff;
+                if (normalizedDiff < 45) return "Arkadan çarpma (Tahmini)";
+                if (normalizedDiff > 135) return "Kafa kafaya çarpışma (Tahmini)";
+                return "Yandan/Dik açılı çarpışma (Tahmini)";
+            };
+
+            const getForwardVector = (rotation) => {
+                const rad = (rotation * Math.PI) / 180;
+                return { x: Math.sin(rad), y: Math.cos(rad) }; 
+            };
+
+            const simulateNewsData = (roadName, riskFactors) => {
+                let baseCount = 0;
+                if (roadName.includes("Caddesi") || roadName.includes("Bulvarı")) baseCount += 5;
+                if (roadName.includes("Yolu") || roadName.includes("Otoyolu")) baseCount += 10;
+                if (riskFactors.includes("TRAFİK IŞIKLARI")) baseCount += 3;
+                const total = Math.max(0, baseCount + Math.floor(Math.random() * 5) - 2);
+                const moto = Math.round(total * 0.3);
+                const car = total - moto;
+                return { total, moto, car };
+            };
+
+            const generateAccidentReport = async () => {
+                setIsAnalyzing(true);
+                setAnalysisReport(null);
+
+                let addressInfo = "Bilinmeyen Konum";
+                let roadAttributes = [];
+                let newsData = null;
+                let waysData = []; 
+
+                try {
+                    const overpassQuery = `[out:json][timeout:10];(way(around:50,${coords.lat},${coords.lng})["highway"];node(around:50,${coords.lat},${coords.lng})["highway"="traffic_signals"];);out geom;`;
+                    const encodedOverpassQuery = encodeURIComponent(overpassQuery);
+
+                    const [nominatimRes, overpassRes] = await Promise.all([
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18&addressdetails=1`, {
+                            headers: { 'User-Agent': 'AccidentSketchApp/1.0' }
+                        }),
+                        fetch(`https://overpass-api.de/api/interpreter?data=${encodedOverpassQuery}`)
+                    ]);
+
+                    if (!nominatimRes.ok) throw new Error("Nominatim API Hatası");
+                    const addrData = await nominatimRes.json();
+                    addressInfo = (addrData.address?.road || "") + ", " + (addrData.address?.suburb || addrData.address?.neighbourhood || "");
+                    if(addressInfo === ", ") addressInfo = "Belirlenemeyen Cadde/Sokak";
+
+                    try {
+                        if (!overpassRes.ok) throw new Error("Overpass API Hatası");
+                        const roadData = await overpassRes.json();
+                        if (roadData.elements) {
+                            waysData = roadData.elements.filter(e => e.type === 'way');
+                            const nodes = roadData.elements.filter(e => e.type === 'node');
+                            const isOneWay = waysData.some(w => w.tags?.oneway === 'yes' || w.tags?.oneway === '-1');
+                            if (isOneWay) roadAttributes.push("⚠️ Harita verilerine göre olay yerindeki yollardan en az biri **TEK YÖNLÜ**dür.");
+                            const hasSignals = nodes.some(n => n.tags?.highway === 'traffic_signals') || waysData.some(w => w.tags?.highway === 'traffic_signals');
+                            if (hasSignals) roadAttributes.push("🚦 Bölgede **TRAFİK IŞIKLARI (Sinyalizasyon)** bulunduğu tespit edilmiştir.");
+                            const speedLimit = waysData.find(w => w.tags?.maxspeed)?.tags?.maxspeed;
+                            if (speedLimit) roadAttributes.push(`⛔ Bölgede hız limiti tabelası (**${speedLimit} km/s**) kaydı bulunmaktadır.`);
+                        }
+                    } catch (opError) {
+                        console.warn("Yol verileri alınamadı:", opError);
+                    }
+                    newsData = simulateNewsData(addrData.address?.road || "", roadAttributes.join(" "));
+                } catch (error) {
+                    console.error("Veri alınamadı:", error);
+                    addressInfo = "Konum bilgisi alınamadı (Ağ Hatası)";
+                }
+
+                const vehicles = elements.filter(el => ['car', 'bus', 'truck', 'moto', 'bicycle'].includes(el.type));
+                const signs = elements.filter(el => ['traffic_sign', 'signal'].includes(el.type));
+                const defects = elements.filter(el => el.type === 'road_defect');
+                const crashPoints = elements.filter(el => el.type === 'sign' && el.subType === 'crash_point');
+                const routes = elements.filter(el => el.type === 'route');
+                
+                let report = [];
+                let faultAssessment = []; 
+                let recommendations = [];
+
+                report.push(`📄 **TAHMİNİ KAZA SENARYOSU**`);
+                report.push(`📍 **Olay Yeri:** ${addressInfo}`);
+                report.push(`🕒 **Zaman/Çevre:** ${environment.lighting || 'Belirtilmemiş'} aydınlatma, ${environment.weather || 'Belirtilmemiş'} hava koşulları.`);
+                if (roadAttributes.length > 0) {
+                    report.push("");
+                    report.push(`🛣️ **Yol ve Trafik Altyapısı:**`);
+                    roadAttributes.forEach(attr => report.push(attr));
+                }
+                report.push("------------------------------------------------");
+                if (vehicles.length === 0) {
+                    report.push("⚠️ Krokide herhangi bir araç bulunamadı.");
+                } else {
+                    vehicles.forEach((v, index) => {
+                        const vName = `${v.color === '#ef4444' ? 'Kırmızı' : v.color === '#3b82f6' ? 'Mavi' : 'Renkli'} ${getVehicleName(v.type)}`;
+                        let movementBearing = v.rotation;
+                        let hasRoute = false;
+                        const associatedRoute = routes.find(r => {
+                            if (r.points && r.points.length > 1) {
+                                const startPoint = r.points[0];
+                                const dist = Math.hypot(startPoint.lat - v.lat, startPoint.lng - v.lng);
+                                return dist < 0.0002;
+                            }
+                            return false;
+                        });
+                        if (associatedRoute) {
+                            hasRoute = true;
+                            movementBearing = calculateBearing(
+                                associatedRoute.points[0].lat, associatedRoute.points[0].lng,
+                                associatedRoute.points[1].lat, associatedRoute.points[1].lng
+                            );
+                        }
+                        const direction = getDirectionFromRotation(movementBearing);
+                        let movementText = `**Araç ${index + 1} (${vName})**: ${direction} yönüne doğru ${hasRoute ? '(çizilen rotaya göre) ' : ''}seyir halindedir.`;
+
+                        let isWrongWay = false;
+                        if (waysData.length > 0) {
+                            let minDistance = Infinity;
+                            let closestWay = null;
+                            let closestSegmentBearing = 0;
+                            waysData.forEach(way => {
+                                const isOneway = way.tags?.oneway === 'yes' || way.tags?.oneway === '-1';
+                                if(isOneway && way.geometry) {
+                                    for(let i=0; i < way.geometry.length - 1; i++) {
+                                        const p1 = way.geometry[i];
+                                        const p2 = way.geometry[i+1];
+                                        const midLat = (p1.lat + p2.lat)/2;
+                                        const midLon = (p1.lon + p2.lon)/2;
+                                        const dist = Math.hypot(midLat - v.lat, midLon - v.lng);
+                                        if(dist < minDistance) {
+                                            minDistance = dist;
+                                            closestWay = way;
+                                            let segmentBearing = calculateBearing(p1.lat, p1.lon, p2.lat, p2.lon);
+                                            if (way.tags?.oneway === '-1') segmentBearing = (segmentBearing + 180) % 360;
+                                            closestSegmentBearing = segmentBearing;
+                                        }
+                                    }
+                                }
+                            });
+                            if (closestWay && minDistance < 0.00025) { 
+                                const angleDiff = angleDifference(movementBearing, closestSegmentBearing);
+                                if (angleDiff > 120) {
+                                    isWrongWay = true;
+                                    movementText += ` ⚠️ **DİKKAT:** Harita verilerine göre araç **TEK YÖNLÜ** yolda **TERS İSTİKAMETTE** görünmektedir!`;
+                                    faultAssessment.push(`⛔ **Araç ${index+1} (Ters Yön):** Harita verilerine göre tek yönlü yola ters istikametten girdiği tespit edilmiştir. Bu durum, **Ters Yön İhlali** (KTK 84/1-h) ihtimalini kuvvetlendirmektedir.`);
+                                }
+                            }
+                        }
+                        const nearbySign = signs.find(s => Math.hypot(s.lat - v.lat, s.lng - v.lng) < 0.00020);
+                        const nearbyDefect = defects.find(d => Math.hypot(d.lat - v.lat, d.lng - v.lng) < 0.00015);
+                        if (nearbySign) {
+                            if (nearbySign.subType === 'priority_stop') {
+                                movementText += ` DUR levhası bölgesindedir.`;
+                                faultAssessment.push(`🔴 **Araç ${index+1}**, DUR levhasına uymayarak geçiş hakkı ihlali yapmış olabilir.`);
+                            }
+                            if (nearbySign.subType === 'red') {
+                                movementText += ` Kırmızı ışık bölgesindedir.`;
+                                faultAssessment.push(`🔴 **Araç ${index+1}**, Kırmızı ışık ihlali yapmış olabilir.`);
+                            }
+                        }
+                        report.push(movementText);
+                    });
+
+                    if (vehicles.length >= 2) {
+                        const crashPoint = crashPoints.length > 0 ? crashPoints[0] : null;
+                        const collisionType = determineCollisionType(vehicles[0], vehicles[1], crashPoint);
+                        report.push("");
+                        report.push(`💥 **Oluş Şekli Tahmini:**`);
+                        report.push(`Tespit edilen çarpışma tipi: **${collisionType}**.`);
+                    }
+                }
+
+                setAnalysisReport(report.join("\n"));
+                setIsAnalyzing(false);
+            };
+
+            const getVehicleName = (type) => {
+                const types = { 'car': 'Otomobil', 'bus': 'Otobüs', 'truck': 'Kamyon', 'moto': 'Motosiklet', 'bicycle': 'Bisiklet' };
+                return types[type] || 'Araç';
+            };
+
+            const downloadAsHtml = () => {
+                const currentState = { coords, elements, environment, streetViewMode, apiKey, isViewOnly: true };
+                const docClone = document.documentElement.cloneNode(true);
+                const rootDiv = docClone.querySelector('#root');
+                if (rootDiv) rootDiv.innerHTML = ''; 
+                const oldScript = docClone.querySelector('#accident-data');
+                if (oldScript) oldScript.remove();
+                const dataScript = document.createElement('script');
+                dataScript.id = 'accident-data';
+                dataScript.text = `window.__ACCIDENT_DATA__ = ${JSON.stringify(currentState)};`;
+                docClone.querySelector('body').appendChild(dataScript);
+                const htmlContent = `<!DOCTYPE html>\n${docClone.outerHTML}`;
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Kaza_Raporu_${new Date().toISOString().slice(0,10)}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            const updateSelected = (prop, val) => {
+                if(selectedId) {
+                    setElements(prev => prev.map(el => el.id === selectedId ? { ...el, [prop]: val } : el));
+                }
+            };
+
+            const addElement = (type, subType = null, label = null) => {
+                if (isViewOnly) return; 
+                if (!isMapLocked) setIsMapLocked(true);
+                const center = mapInstanceRef.current.getCenter();
+                const id = Date.now().toString();
+                let newElement = { 
+                    id, type, subType, 
+                    lat: center.lat, lng: center.lng, 
+                    rotation: 0, scale: 1, zIndex: 10, 
+                    color: '#3b82f6', text: type === 'text' ? 'Kaza Notu' : (label || ''), speed: 0, crashed: false 
+                };
+                
+                if (type === 'car') { newElement.width = 40; newElement.height = 80; newElement.color = subType === 'red' ? '#ef4444' : '#3b82f6'; }
+                else if (type === 'bus') { newElement.width = 55; newElement.height = 160; }
+                else if (type === 'truck') { newElement.width = 55; newElement.height = 140; }
+                else if (type === 'moto') { newElement.width = 30; newElement.height = 60; }
+                else if (type === 'bicycle') { newElement.width = 15; newElement.height = 45; }
+                else if (type === 'pedestrian') { newElement.width = 20; newElement.height = 20; }
+                else if (type === 'animal') { newElement.width = 25; newElement.height = 25; }
+                else if (type === 'sign' || type === 'traffic_sign') { newElement.width = 35; newElement.height = 35; } 
+                else if (type === 'signal') { newElement.width = 20; newElement.height = 50; }
+                else if (type === 'refuge') { newElement.width = 30; newElement.height = 100; }
+                else if (type === 'arrow') { newElement.width = 40; newElement.height = 80; }
+                else if (type === 'road_defect') { newElement.width = 40; newElement.height = 40; }
+                // YAZI HITBOX TANIMLAMASI (Düzeltme)
+                else if (type === 'text') { newElement.width = 100; newElement.height = 40; }
+                
+                setElements(prev => [...prev, newElement]); 
+                setSelectedId(id); 
+                setMode('select');
+            };
+
+            const finishRoute = () => { setActiveRouteId(null); };
+
+            const changeMode = (newMode) => {
+                if (isViewOnly) return; 
+                setMode(newMode);
+                if (newMode === 'pan') setIsMapLocked(false); else setIsMapLocked(true);
+                if (newMode !== 'route' && activeRouteId) setActiveRouteId(null);
+            };
+
+            // React State to Ref Sync
+            const stateRef = useRef({ elements, selectedId, screenshotMode, courierImage, activeRouteId, mode });
+            useEffect(() => { stateRef.current = { elements, selectedId, screenshotMode, courierImage, activeRouteId, mode }; }, [elements, selectedId, screenshotMode, courierImage, activeRouteId, mode]);
+
+            useEffect(() => {
+                if (mapLoaded && mapContainerRef.current && !mapInstanceRef.current && window.L) {
+                    const map = window.L.map(mapContainerRef.current, { zoomControl: false }).setView([coords.lat, coords.lng], 18);
+                    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM', maxZoom: 21 }).addTo(map);
+                    mapInstanceRef.current = map;
+                    markerRef.current = window.L.marker([coords.lat, coords.lng]).addTo(map);
+                } else if (mapInstanceRef.current) {
+                    mapInstanceRef.current.setView([coords.lat, coords.lng]);
+                    if (markerRef.current) markerRef.current.setLatLng([coords.lat, coords.lng]);
+                }
+            }, [mapLoaded, coords]);
+
+            return (
+                <div className="flex flex-col h-screen bg-slate-100 font-sans overflow-hidden">
+                    {!screenshotMode && (
+                        <div className="bg-white p-2 shadow z-20 flex gap-2 items-center justify-between border-b">
+                            <div className="flex items-center gap-2 font-bold text-blue-900">
+                                <Icon name="alert-triangle" className="text-red-500"/> 
+                                {isViewOnly ? 'Kaza Tutanağı (Salt Okunur)' : 'Kaza Tutanağı'}
+                            </div>
+                            
+                            <div className="flex gap-1 bg-gray-50 p-1 rounded border text-xs items-center">
+                                {!isViewOnly && (
+                                    <>
+                                        <button onClick={handleZoomOut} className="p-1 hover:bg-gray-200 rounded" ><Icon name="minus" size={14}/></button>
+                                        <button onClick={handleZoomIn} className="p-1 hover:bg-gray-200 rounded" ><Icon name="plus" size={14}/></button>
+                                    </>
+                                )}
+                                <input type="text" disabled={isViewOnly} className={`w-20 p-1 border rounded ${isViewOnly ? 'bg-gray-100 text-gray-500' : ''}`} value={inputCoords.lat} onChange={e=>setInputCoords({...inputCoords, lat:e.target.value})}/>
+                                <input type="text" disabled={isViewOnly} className={`w-20 p-1 border rounded ${isViewOnly ? 'bg-gray-100 text-gray-500' : ''}`} value={inputCoords.lng} onChange={e=>setInputCoords({...inputCoords, lng:e.target.value})}/>
+                                {!isViewOnly && (
+                                    <button onClick={()=>{setCoords({lat: parseFloat(inputCoords.lat), lng: parseFloat(inputCoords.lng)})}} className="bg-blue-600 text-white p-1 rounded"><Icon name="navigation" size={14}/></button>
+                                )}
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={generateAccidentReport} className="flex items-center gap-1 bg-purple-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-purple-700 shadow-sm">
+                                    <Icon name="brain-circuit" size={14}/> Analiz Et
+                                </button>
+                                <button onClick={() => setShowHelp(true)} className="flex items-center gap-1 bg-orange-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-orange-600 shadow-sm">
+                                    <Icon name="help-circle" size={14}/> Nasıl Kullanılır?
+                                </button>
+                                {!isViewOnly && (
+                                    <button onClick={downloadAsHtml} className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700">
+                                        <Icon name="download" size={14}/> HTML İndir
+                                    </button>
+                                )}
+                                {!isViewOnly && (
+                                    <button onClick={()=>setScreenshotMode(true)} className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700"><Icon name="camera" size={14}/> Foto</button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {showHelp && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center modal-overlay p-4" onClick={() => setShowHelp(false)}>
+                            <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                                <div className="p-4 bg-orange-500 text-white rounded-t-lg flex justify-between items-center sticky top-0 z-10">
+                                    <h2 className="text-lg font-bold flex items-center gap-2"><Icon name="help-circle"/> Kullanım Kılavuzu</h2>
+                                    <button onClick={() => setShowHelp(false)}><Icon name="x"/></button>
+                                </div>
+                                <div className="p-6 space-y-6">
+                                    <div className="help-step">
+                                        <div className="help-icon"><Icon name="map-pin"/></div>
+                                        <div className="help-content">
+                                            <h4>1. Konum Belirleme</h4>
+                                            <p>Haritayı kaydırarak veya koordinat girerek kaza yerine gidin.</p>
+                                        </div>
+                                    </div>
+                                    <div className="help-step">
+                                        <div className="help-icon"><Icon name="car"/></div>
+                                        <div className="help-content">
+                                            <h4>2. Araç ve Nesne Ekleme</h4>
+                                            <p>Sol menüden otomobil, yaya, tabela gibi nesneleri haritaya ekleyin.</p>
+                                        </div>
+                                    </div>
+                                    <div className="help-step">
+                                        <div className="help-icon"><Icon name="move"/></div>
+                                        <div className="help-content">
+                                            <h4>3. Taşıma ve Döndürme</h4>
+                                            <p>Eklenen nesneleri sürükleyin. Seçtiğinizde açılan ayarlardan <strong>Yön</strong> ve <strong>Boyut</strong> değiştirin.</p>
+                                        </div>
+                                    </div>
+                                    <div className="help-step">
+                                        <div className="help-icon"><Icon name="type"/></div>
+                                        <div className="help-content">
+                                            <h4>4. Yazı ve Not Ekleme</h4>
+                                            <p><strong>Yazı</strong> butonuna basarak not ekleyin. Yazıyı seçip sol menüden metnini düzenleyebilirsiniz.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-1 overflow-hidden relative">
+                        {!screenshotMode && !isViewOnly && (
+                            <div className="w-64 bg-white border-r z-20 flex flex-col overflow-y-auto shadow-lg">
+                                <div className="flex-1">
+                                    <div className="p-2 border-b space-y-2">
+                                        <div className="flex gap-2">
+                                            <button onClick={()=>changeMode('select')} className={`flex-1 p-1 border rounded ${mode==='select'?'bg-blue-100':''}`} title="Seç"><Icon name="mouse-pointer-2" size={16} className="mx-auto"/></button>
+                                            <button onClick={()=>changeMode('route')} className={`flex-1 p-1 border rounded ${mode==='route'?'bg-blue-100':''}`} title="Rota Çiz"><Icon name="route" size={16} className="mx-auto"/></button>
+                                            <button onClick={()=>changeMode('eraser')} className={`flex-1 p-1 border rounded ${mode==='eraser'?'bg-blue-100':''}`} title="Silgi"><Icon name="eraser" size={16} className="mx-auto"/></button>
+                                            <button onClick={()=>changeMode('pan')} className={`flex-1 p-1 border rounded ${mode==='pan'?'bg-blue-100':''}`} title="Haritayı Kaydır"><Icon name="hand" size={16} className="mx-auto"/></button>
+                                        </div>
+                                        {mode==='route' && (
+                                            <div className="flex flex-col gap-2">
+                                                {activeRouteId && <button onClick={finishRoute} className="w-full py-1 bg-green-100 text-green-700 text-xs font-bold rounded border border-green-200">✓ Rotayı Bitir</button>}
+                                                <div className="flex gap-2 items-center">
+                                                    <input type="color" value={drawingColor} onChange={e=>setDrawingColor(e.target.value)} className="w-8 h-6 rounded border"/>
+                                                    <input type="range" min="1" max="20" value={drawingWidth} onChange={e=>setDrawingWidth(parseInt(e.target.value))} className="flex-1 h-1"/>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <MenuItem id="vehicles" title="Araçlar" icon="car">
+                                        <ButtonEl onClick={()=>addElement('moto','courier')} icon="bike" label="Kurye" color="text-purple-700" bg="bg-purple-50"/>
+                                        <ButtonEl onClick={()=>addElement('car','blue')} icon="car" label="Oto A" color="text-blue-600"/>
+                                        <ButtonEl onClick={()=>addElement('car','red')} icon="car" label="Oto B" color="text-red-600"/>
+                                        <ButtonEl onClick={()=>addElement('bus')} icon="bus" label="Otobüs"/>
+                                        <ButtonEl onClick={()=>addElement('truck')} icon="truck" label="Kamyon"/>
+                                        <ButtonEl onClick={()=>addElement('pedestrian')} icon="user" label="Yaya"/>
+                                    </MenuItem>
+
+                                    <MenuItem id="env" title="Çevre & Çarpışma" icon="sun">
+                                        <ButtonEl onClick={()=>addElement('sign','crash_point')} icon="zap" label="Çarpışma" color="text-red-600" bg="bg-red-50"/>
+                                        <ButtonEl onClick={()=>setEnvironment({...environment, weather:'Yağmurlu'})} icon="cloud-rain" label="Yağmur"/>
+                                        <ButtonEl onClick={()=>setEnvironment({...environment, lighting:'Gece'})} icon="moon" label="Gece"/>
+                                    </MenuItem>
+
+                                    <MenuItem id="road" title="Yol & Trafik" icon="arrow-up">
+                                        <ButtonEl onClick={()=>addElement('traffic_sign','priority_stop')} icon="octagon" label="DUR" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('signal','red')} icon="traffic-cone" label="Işıklar" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('text')} icon="type" label="Yazı" />
+                                    </MenuItem>
+
+                                    {selectedId && (
+                                        <div className="p-2 m-2 bg-blue-50 rounded border border-blue-100">
+                                            <div className="flex justify-between mb-1">
+                                                <span className="text-[10px] font-bold text-blue-800 uppercase">Düzenle</span>
+                                                <button onClick={()=>{setElements(prev=>prev.filter(el=>el.id!==selectedId));setSelectedId(null)}} className="text-red-500"><Icon name="trash-2" size={14}/></button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {elements.find(e=>e.id===selectedId)?.type === 'text' && (
+                                                    <div>
+                                                        <label className="text-[9px] block mb-1">Yazı İçeriği</label>
+                                                        <input type="text" className="w-full p-1 text-xs border rounded" value={elements.find(e=>e.id===selectedId)?.text || ''} onChange={e=>updateSelected('text', e.target.value)}/>
+                                                    </div>
+                                                )}
+                                                <div><label className="text-[9px] block">Yön</label><input type="range" min="0" max="360" className="w-full" value={elements.find(e=>e.id===selectedId)?.rotation || 0} onChange={e=>updateSelected('rotation', parseInt(e.target.value))}/></div>
+                                                <div><label className="text-[9px] block">Boyut</label><input type="range" min="0.5" max="3" step="0.1" className="w-full" value={elements.find(e=>e.id===selectedId)?.scale || 1} onChange={e=>updateSelected('scale', parseFloat(e.target.value))}/></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 relative bg-gray-200 overflow-hidden">
+                            <div ref={mapContainerRef} className="absolute inset-0 z-0"></div>
+                            
+                            {analysisReport && (
+                                <div className="absolute top-14 left-4 right-4 md:left-auto md:right-4 md:w-80 z-40 bg-white rounded-lg shadow-2xl border border-purple-200 flex flex-col max-h-[80vh]">
+                                    <div className="p-3 bg-purple-600 text-white rounded-t-lg flex justify-between items-center">
+                                        <h3 className="font-bold text-sm flex items-center gap-2"><Icon name="file-text" size={16}/> Yapay Zeka Raporu</h3>
+                                        <button onClick={() => setAnalysisReport(null)} className="hover:bg-purple-700 p-1 rounded"><Icon name="x" size={16}/></button>
+                                    </div>
+                                    <div className="p-4 overflow-y-auto text-sm text-slate-700 space-y-2 leading-relaxed whitespace-pre-line">
+                                        {analysisReport}
+                                    </div>
+                                </div>
+                            )}
+
+                            <canvas 
+                                ref={canvasRef} width={canvasSize.width} height={canvasSize.height}
+                                className={`absolute inset-0 z-10 ${isMapLocked&&mode!=='pan'?'cursor-crosshair pointer-events-auto':'pointer-events-none'}`}
+                                onMouseDown={(e) => {
+                                    if (isViewOnly || !isMapLocked) return;
+                                    const rect = canvasRef.current.getBoundingClientRect();
+                                    const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                                    const latlng = mapInstanceRef.current.containerPointToLatLng([x, y]);
+                                    if (mode === 'route') {
+                                        if (activeRouteId) {
+                                            setElements(prev => prev.map(el => el.id === activeRouteId ? { ...el, points: [...el.points, {lat: latlng.lat, lng: latlng.lng}] } : el));
+                                        } else {
+                                            const newId = Date.now().toString();
+                                            setElements(prev => [...prev, { id: newId, type: 'route', points: [{lat: latlng.lat, lng: latlng.lng}], color: drawingColor, lineWidth: drawingWidth }]);
+                                            setActiveRouteId(newId);
+                                        }
+                                        return;
+                                    }
+                                    let clickedId = null;
+                                    [...elements].reverse().forEach(el => {
+                                        if(clickedId) return;
+                                        if(el.type === 'route') return;
+                                        const pt = mapInstanceRef.current.latLngToContainerPoint([el.lat, el.lng]);
+                                        const hw = (el.width*el.scale)/2; const hh = (el.height*el.scale)/2;
+                                        if (Math.abs(pt.x - x) < hw+15 && Math.abs(pt.y - y) < hh+15) clickedId = el.id;
+                                    });
+                                    if (clickedId) { setSelectedId(clickedId); setAction('moving'); setDragStart(latlng); } else { setSelectedId(null); }
+                                }}
+                                onMouseMove={(e) => {
+                                    if (isViewOnly || !isMapLocked) return;
+                                    const rect = canvasRef.current.getBoundingClientRect();
+                                    const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                                    const latlng = mapInstanceRef.current.containerPointToLatLng([x, y]);
+                                    mousePosRef.current = {x, y};
+                                    if (action === 'moving' && selectedId) {
+                                        const dLat = latlng.lat - dragStart.lat; const dLng = latlng.lng - dragStart.lng;
+                                        setElements(prev => prev.map(el => el.id === selectedId ? { ...el, lat: el.lat + dLat, lng: el.lng + dLng } : el));
+                                        setDragStart(latlng);
+                                    }
+                                }}
+                                onMouseUp={() => setAction('none')}
+                            />
+                            {screenshotMode && <div className="absolute top-4 left-4 z-30 bg-black/80 text-white p-3 rounded text-center"><h3 className="font-bold">Foto Modu</h3><button onClick={()=>setScreenshotMode(false)} className="bg-white text-black px-2 py-1 rounded text-xs mt-2 font-bold">Kapat</button></div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MapAccidentSketch />);
+    </script>
+</body>
+</html>
