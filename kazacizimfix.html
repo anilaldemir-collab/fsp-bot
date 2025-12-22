@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -173,7 +172,6 @@
                 </div>
             );
 
-            // --- ZOOM HANDLERS ---
             const handleZoomIn = () => {
                 if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
             };
@@ -251,6 +249,7 @@
                 return { total, moto, car };
             };
 
+            // --- ANALİZ MOTORU ---
             const generateAccidentReport = async () => {
                 setIsAnalyzing(true);
                 setAnalysisReport(null);
@@ -279,20 +278,26 @@
                     try {
                         if (!overpassRes.ok) throw new Error("Overpass API Hatası");
                         const roadData = await overpassRes.json();
+                        
                         if (roadData.elements) {
                             waysData = roadData.elements.filter(e => e.type === 'way');
                             const nodes = roadData.elements.filter(e => e.type === 'node');
+
                             const isOneWay = waysData.some(w => w.tags?.oneway === 'yes' || w.tags?.oneway === '-1');
                             if (isOneWay) roadAttributes.push("⚠️ Harita verilerine göre olay yerindeki yollardan en az biri **TEK YÖNLÜ**dür.");
+
                             const hasSignals = nodes.some(n => n.tags?.highway === 'traffic_signals') || waysData.some(w => w.tags?.highway === 'traffic_signals');
                             if (hasSignals) roadAttributes.push("🚦 Bölgede **TRAFİK IŞIKLARI (Sinyalizasyon)** bulunduğu tespit edilmiştir.");
+
                             const speedLimit = waysData.find(w => w.tags?.maxspeed)?.tags?.maxspeed;
                             if (speedLimit) roadAttributes.push(`⛔ Bölgede hız limiti tabelası (**${speedLimit} km/s**) kaydı bulunmaktadır.`);
                         }
                     } catch (opError) {
                         console.warn("Yol verileri alınamadı:", opError);
                     }
+
                     newsData = simulateNewsData(addrData.address?.road || "", roadAttributes.join(" "));
+
                 } catch (error) {
                     console.error("Veri alınamadı:", error);
                     addressInfo = "Konum bilgisi alınamadı (Ağ Hatası)";
@@ -311,19 +316,26 @@
                 report.push(`📄 **TAHMİNİ KAZA SENARYOSU**`);
                 report.push(`📍 **Olay Yeri:** ${addressInfo}`);
                 report.push(`🕒 **Zaman/Çevre:** ${environment.lighting || 'Belirtilmemiş'} aydınlatma, ${environment.weather || 'Belirtilmemiş'} hava koşulları.`);
+                
                 if (roadAttributes.length > 0) {
                     report.push("");
                     report.push(`🛣️ **Yol ve Trafik Altyapısı:**`);
                     roadAttributes.forEach(attr => report.push(attr));
                 }
+
                 report.push("------------------------------------------------");
+
                 if (vehicles.length === 0) {
                     report.push("⚠️ Krokide herhangi bir araç bulunamadı.");
                 } else {
+                    // ARAÇ ANALİZİ
                     vehicles.forEach((v, index) => {
                         const vName = `${v.color === '#ef4444' ? 'Kırmızı' : v.color === '#3b82f6' ? 'Mavi' : 'Renkli'} ${getVehicleName(v.type)}`;
+                        
+                        // ROTA VARSA YÖNÜ ROTADAN AL, YOKSA ARAÇTAN
                         let movementBearing = v.rotation;
                         let hasRoute = false;
+
                         const associatedRoute = routes.find(r => {
                             if (r.points && r.points.length > 1) {
                                 const startPoint = r.points[0];
@@ -332,6 +344,7 @@
                             }
                             return false;
                         });
+
                         if (associatedRoute) {
                             hasRoute = true;
                             movementBearing = calculateBearing(
@@ -339,14 +352,17 @@
                                 associatedRoute.points[1].lat, associatedRoute.points[1].lng
                             );
                         }
+
                         const direction = getDirectionFromRotation(movementBearing);
                         let movementText = `**Araç ${index + 1} (${vName})**: ${direction} yönüne doğru ${hasRoute ? '(çizilen rotaya göre) ' : ''}seyir halindedir.`;
 
+                        // GÜÇLENDİRİLMİŞ TERS YÖN ANALİZİ (ROTA DESTEKLİ)
                         let isWrongWay = false;
                         if (waysData.length > 0) {
                             let minDistance = Infinity;
                             let closestWay = null;
                             let closestSegmentBearing = 0;
+
                             waysData.forEach(way => {
                                 const isOneway = way.tags?.oneway === 'yes' || way.tags?.oneway === '-1';
                                 if(isOneway && way.geometry) {
@@ -356,48 +372,171 @@
                                         const midLat = (p1.lat + p2.lat)/2;
                                         const midLon = (p1.lon + p2.lon)/2;
                                         const dist = Math.hypot(midLat - v.lat, midLon - v.lng);
+                                        
                                         if(dist < minDistance) {
                                             minDistance = dist;
                                             closestWay = way;
                                             let segmentBearing = calculateBearing(p1.lat, p1.lon, p2.lat, p2.lon);
-                                            if (way.tags?.oneway === '-1') segmentBearing = (segmentBearing + 180) % 360;
+                                            if (way.tags?.oneway === '-1') {
+                                                segmentBearing = (segmentBearing + 180) % 360;
+                                            }
                                             closestSegmentBearing = segmentBearing;
                                         }
                                     }
                                 }
                             });
+
                             if (closestWay && minDistance < 0.00025) { 
                                 const angleDiff = angleDifference(movementBearing, closestSegmentBearing);
                                 if (angleDiff > 120) {
                                     isWrongWay = true;
                                     movementText += ` ⚠️ **DİKKAT:** Harita verilerine göre araç **TEK YÖNLÜ** yolda **TERS İSTİKAMETTE** görünmektedir!`;
                                     faultAssessment.push(`⛔ **Araç ${index+1} (Ters Yön):** Harita verilerine göre tek yönlü yola ters istikametten girdiği tespit edilmiştir. Bu durum, **Ters Yön İhlali** (KTK 84/1-h) ihtimalini kuvvetlendirmektedir.`);
+                                    if(!recommendations.some(r => r.includes("kapan"))) recommendations.push("Ters yön ihlallerini önlemek için kapan veya daha belirgin 'Girilmez' levhaları konulmalıdır.");
                                 }
                             }
                         }
-                        const nearbySign = signs.find(s => Math.hypot(s.lat - v.lat, s.lng - v.lng) < 0.00020);
-                        const nearbyDefect = defects.find(d => Math.hypot(d.lat - v.lat, d.lng - v.lng) < 0.00015);
+                        
+                        const nearbySign = signs.find(s => {
+                            const dist = Math.hypot(s.lat - v.lat, s.lng - v.lng);
+                            return dist < 0.00020; 
+                        });
+
+                        const nearbyDefect = defects.find(d => {
+                            const dist = Math.hypot(d.lat - v.lat, d.lng - v.lng);
+                            return dist < 0.00015;
+                        });
+
                         if (nearbySign) {
                             if (nearbySign.subType === 'priority_stop') {
-                                movementText += ` DUR levhası bölgesindedir.`;
-                                faultAssessment.push(`🔴 **Araç ${index+1}**, DUR levhasına uymayarak geçiş hakkı ihlali yapmış olabilir.`);
+                                movementText += ` Sürücü "DUR" levhası bölgesindedir.`;
+                                faultAssessment.push(`🔴 **Araç ${index+1}**, DUR levhasına uymayarak geçiş hakkı ihlali yapmış olabilir (KTK 57/1-a).`);
+                                if(!recommendations.some(r => r.includes("tam duruş"))) recommendations.push("Sürücülerin 'DUR' levhası bulunan kavşaklarda tekerlekleri tam duracak şekilde durmaları ve yolu kontrol ettikten sonra geçiş yapmaları gerekmektedir.");
                             }
                             if (nearbySign.subType === 'red') {
                                 movementText += ` Kırmızı ışık bölgesindedir.`;
-                                faultAssessment.push(`🔴 **Araç ${index+1}**, Kırmızı ışık ihlali yapmış olabilir.`);
+                                faultAssessment.push(`🔴 **Araç ${index+1}**, Kırmızı ışık ihlali yapmış olabilir (KTK 47/1-b).`);
+                                if(!recommendations.some(r => r.includes("ışık"))) recommendations.push("Sürücülerin trafik ışıklarına yaklaşırken hızlarını azaltmaları, sarı ışıkta geçmek yerine durmaya hazırlanmaları hayati önem taşır.");
+                            }
+                            if (nearbySign.subType === 'no_entry' && !isWrongWay) { 
+                                movementText += ` "Girilmez" levhası bölgesindedir.`;
+                                faultAssessment.push(`🔴 **Araç ${index+1}**, "Girilmez" levhasına rağmen yola girmiş görünmektedir (Ters Yön İhlali).`);
+                            }
+                            if (nearbySign.subType === 'priority_yield') {
+                                faultAssessment.push(`⚠️ **Araç ${index+1}**, "Yol Ver" levhasına rağmen geçiş üstünlüğüne uymamış olabilir.`);
+                                if(!recommendations.some(r => r.includes("tali yol"))) recommendations.push("Tali yoldan ana yola çıkan sürücülerin, ana yoldaki araç akışını riske atmayacak şekilde beklemeleri gerekmektedir.");
+                            }
+                            if (nearbySign.subType === 'danger_pedestrian') {
+                                movementText += ` Yaya geçidi bölgesindedir.`;
+                                faultAssessment.push(`⚠️ **Araç ${index+1}**, Yaya geçidinde durmayarak yayaların geçiş hakkını ihlal etmiş olabilir (KTK 74).`);
+                                if(!recommendations.some(r => r.includes("yaya"))) recommendations.push("Sürücülerin yaya geçitlerine yaklaşırken hızlarını mutlak suretle düşürmeleri ve yayalara ilk geçiş hakkını vermeleri yasal zorunluluktur.");
                             }
                         }
+
+                        if(nearbyDefect) {
+                            if(nearbyDefect.subType === 'pothole') {
+                                movementText += ` Yol üzerinde çukur/bozuk zemin mevcuttur.`;
+                                faultAssessment.push(`ℹ️ **Araç ${index+1}**, Yol bozukluğundan kaçarken şerit ihlali yapmış veya direksiyon hakimiyetini kaybetmiş olabilir.`);
+                                if(!recommendations.some(r => r.includes("hakimiyet"))) recommendations.push("Sürücülerin yol yüzeyindeki bozuklukları fark ettiklerinde ani direksiyon kırmaktan kaçınmaları ve hızlarını yol şartlarına göre ayarlamaları gerekir.");
+                            }
+                            if(nearbyDefect.subType === 'slippery') {
+                                movementText += ` Kaygan zemin bölgesindedir.`;
+                                faultAssessment.push(`ℹ️ **Araç ${index+1}**, Kaygan zeminde hızını azaltmayarak kontrolü kaybetmiş olabilir.`);
+                                if(!recommendations.some(r => r.includes("takip"))) recommendations.push("Kaygan zeminlerde takip mesafesinin normalin en az iki katına çıkarılması ve ani frenlemeden kaçınılması gerekmektedir.");
+                            }
+                        }
+                        
                         report.push(movementText);
                     });
 
+                    report.push(""); 
+
                     if (vehicles.length >= 2) {
+                        let v1 = vehicles[0];
+                        let v2 = vehicles[1]; 
+                        
                         const crashPoint = crashPoints.length > 0 ? crashPoints[0] : null;
-                        const collisionType = determineCollisionType(vehicles[0], vehicles[1], crashPoint);
-                        report.push("");
+                        
+                        const collisionType = determineCollisionType(v1, v2, crashPoint);
+                        const v1Name = `Araç 1 (${v1.color === '#ef4444' ? 'Kırmızı' : 'Mavi'} ${getVehicleName(v1.type)})`;
+                        const v2Name = `Araç 2 (${v2.color === '#ef4444' ? 'Kırmızı' : 'Mavi'} ${getVehicleName(v2.type)})`;
+
                         report.push(`💥 **Oluş Şekli Tahmini:**`);
-                        report.push(`Tespit edilen çarpışma tipi: **${collisionType}**.`);
+                        if (crashPoint) report.push(`Analiz, işaretlenen "Çarpışma Noktası" (Crash Point) baz alınarak yapılmıştır.`);
+
+                        if (collisionType.includes("Arkadan")) {
+                            report.push(`Araçların çarpışma noktasına aynı istikametten yaklaştığı tespit edilmiştir. Bu durum **${collisionType}** olduğunu göstermektedir.`);
+                            faultAssessment.push(`⚠️ **Takip Mesafesi:** Arkadan gelen araç, önündeki aracı yeterli mesafeden takip etmeyerek (KTK 56/1-c) asli kusurlu durumunda olabilir.`);
+                            if(!recommendations.some(r => r.includes("hızın yarısı"))) recommendations.push("Sürücülerin önlerindeki araçla aralarında, hızlarının en az yarısı kadar (örneğin 90 km/s ile giderken 45 metre) güvenli takip mesafesi bırakmaları gerekmektedir.");
+
+                        } else if (collisionType.includes("Kafa kafaya")) {
+                            report.push(`Araçların çarpışma noktasına birbirlerine zıt (karşıt) yönlerden yaklaştığı tespit edilmiştir. Bu durum **${collisionType}** olduğunu işaret eder.`);
+                            faultAssessment.push(`⚠️ **Şerit İhlali:** Kendi şeridini terk eden, hatalı sollama yapan veya ters yöne giren araç Asli Kusurlu sayılacaktır (KTK 84/1-c).`);
+                            if(!recommendations.some(r => r.includes("sollama"))) recommendations.push("Sürücülerin görüş mesafesinin yetersiz olduğu viraj ve tepe üstü gibi noktalarda kesinlikle sollama yapmamaları ve kendi şeritlerini terk etmemeleri gerekmektedir.");
+
+                        } else {
+                            // Yandan Çarpışma
+                            report.push(`Araçların çarpışma noktasına farklı açılardan (kesişerek) yaklaştığı tespit edilmiştir. Bu durum **${collisionType}** olduğunu göstermektedir.`);
+                            const hasSignals = signs.length > 0 || roadAttributes.some(attr => attr.includes("TRAFİK IŞIKLARI"));
+                            if (!hasSignals) {
+                                faultAssessment.push(`⚠️ **Kontrolsüz Kavşak:** Levha veya ışık bulunmayan kavşaklarda, sağdan gelen araca yol verilmemesi (KTK 57/1-c) muhtemel kaza sebebidir.`);
+                                if(!recommendations.some(r => r.includes("kavşak kontrolü"))) recommendations.push("Sürücülerin kavşaklara yaklaşırken, geçiş önceliği kendilerinde olsa bile hızlarını azaltmaları ve diğer araçların durabilem ihtimalini gözetmeleri (Defansif Sürüş) önemlidir.");
+                            }
+                        }
                     }
                 }
+
+                // GENEL ÖNERİLER
+                if(environment.weather === 'Yağmurlu' || environment.weather === 'Karlı') {
+                    recommendations.push("Yağışlı havalarda lastik tutunma özelliği azaldığından, sürücülerin hızlarını limitlerin altına düşürmeleri ve ani manevralardan kaçınmaları şarttır.");
+                }
+                if(environment.lighting && environment.lighting.includes('Gece')) {
+                    recommendations.push("Gece sürüşlerinde görüş mesafesi düştüğünden, sürücülerin hızlarını farlarının aydınlattığı mesafe içinde durabilecekleri seviyeye ayarlamaları gerekmektedir.");
+                }
+
+                // KUSUR RAPORU
+                if (faultAssessment.length > 0) {
+                    report.push("------------------------------------------------");
+                    report.push(`⚖️ **KUSUR DURUMU DEĞERLENDİRMESİ**`);
+                    faultAssessment.forEach(fault => report.push(fault));
+                } else if (vehicles.length > 0) {
+                    report.push("------------------------------------------------");
+                    report.push(`⚖️ **KUSUR DURUMU DEĞERLENDİRMESİ**`);
+                    report.push(`ℹ️ Mevcut kroki verileriyle belirgin bir kural ihlali tespit edilememiştir. Hız ve dikkatsizlik faktörleri incelenmelidir.`);
+                }
+
+                // ÖNERİLER
+                if (recommendations.length > 0) {
+                    report.push("------------------------------------------------");
+                    report.push(`🚗 **SÜRÜCÜLER İÇİN GÜVENLİ SÜRÜŞ TAVSİYELERİ**`);
+                    recommendations.forEach(rec => report.push(`• ${rec}`));
+                } else {
+                    report.push("------------------------------------------------");
+                    report.push(`🚗 **SÜRÜCÜLER İÇİN GÜVENLİ SÜRÜŞ TAVSİYELERİ**`);
+                    report.push(`• Sürücülerin direksiyon başındayken dikkat dağıtıcı unsurlardan (telefon vb.) uzak durmaları.`);
+                    report.push(`• Hız limitlerine uyulması ve emniyet kemerinin mutlaka takılması.`);
+                }
+
+                // HABER ANALİZİ
+                report.push("------------------------------------------------");
+                report.push(`🗞️ **İNTERNET KAZA HABERLERİ TARAMASI (SİMÜLASYON)**`);
+                if (newsData) {
+                    report.push(`**Bölge:** ${addressInfo.split(',')[0]}`);
+                    report.push(`**Bulunan Tahmini Haber Sayısı:** ${newsData.total}`);
+                    report.push(`   - Araç Kazası: ${newsData.car}`);
+                    report.push(`   - Motosiklet Kazası: ${newsData.moto}`);
+                    report.push(`*(Bu veriler yol özelliklerine dayalı tahmini simülasyondur. Gerçek veriler için aşağıdaki linki kullanın)*`);
+                } else {
+                    report.push("Veri oluşturulamadı.");
+                }
+                
+                const query = encodeURIComponent(`${addressInfo.split(',')[0]} kaza haberleri`);
+                report.push("");
+                report.push(`🔗 **[Google'da Gerçek Kaza Haberlerini Ara](https://www.google.com/search?q=${query})**`);
+
+
+                report.push("------------------------------------------------");
+                report.push("ℹ️ *Bu rapor, krokideki araç konumları ve harita verilerine dayalı yapay zeka tahminidir. Resmi bilirkişi raporu değildir.*");
 
                 setAnalysisReport(report.join("\n"));
                 setIsAnalyzing(false);
@@ -409,16 +548,27 @@
             };
 
             const downloadAsHtml = () => {
-                const currentState = { coords, elements, environment, streetViewMode, apiKey, isViewOnly: true };
+                const currentState = {
+                    coords,
+                    elements,
+                    environment,
+                    streetViewMode,
+                    apiKey,
+                    isViewOnly: true 
+                };
+
                 const docClone = document.documentElement.cloneNode(true);
                 const rootDiv = docClone.querySelector('#root');
                 if (rootDiv) rootDiv.innerHTML = ''; 
                 const oldScript = docClone.querySelector('#accident-data');
                 if (oldScript) oldScript.remove();
+
                 const dataScript = document.createElement('script');
                 dataScript.id = 'accident-data';
                 dataScript.text = `window.__ACCIDENT_DATA__ = ${JSON.stringify(currentState)};`;
+                
                 docClone.querySelector('body').appendChild(dataScript);
+
                 const htmlContent = `<!DOCTYPE html>\n${docClone.outerHTML}`;
                 const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
@@ -431,56 +581,24 @@
                 URL.revokeObjectURL(url);
             };
 
-            const updateSelected = (prop, val) => {
-                if(selectedId) {
-                    setElements(prev => prev.map(el => el.id === selectedId ? { ...el, [prop]: val } : el));
-                }
-            };
-
-            const addElement = (type, subType = null, label = null) => {
-                if (isViewOnly) return; 
-                if (!isMapLocked) setIsMapLocked(true);
-                const center = mapInstanceRef.current.getCenter();
-                const id = Date.now().toString();
-                let newElement = { 
-                    id, type, subType, 
-                    lat: center.lat, lng: center.lng, 
-                    rotation: 0, scale: 1, zIndex: 10, 
-                    color: '#3b82f6', text: type === 'text' ? 'Kaza Notu' : (label || ''), speed: 0, crashed: false 
-                };
-                
-                if (type === 'car') { newElement.width = 40; newElement.height = 80; newElement.color = subType === 'red' ? '#ef4444' : '#3b82f6'; }
-                else if (type === 'bus') { newElement.width = 55; newElement.height = 160; }
-                else if (type === 'truck') { newElement.width = 55; newElement.height = 140; }
-                else if (type === 'moto') { newElement.width = 30; newElement.height = 60; }
-                else if (type === 'bicycle') { newElement.width = 15; newElement.height = 45; }
-                else if (type === 'pedestrian') { newElement.width = 20; newElement.height = 20; }
-                else if (type === 'animal') { newElement.width = 25; newElement.height = 25; }
-                else if (type === 'sign' || type === 'traffic_sign') { newElement.width = 35; newElement.height = 35; } 
-                else if (type === 'signal') { newElement.width = 20; newElement.height = 50; }
-                else if (type === 'refuge') { newElement.width = 30; newElement.height = 100; }
-                else if (type === 'arrow') { newElement.width = 40; newElement.height = 80; }
-                else if (type === 'road_defect') { newElement.width = 40; newElement.height = 40; }
-                // YAZI HITBOX TANIMLAMASI (Düzeltme)
-                else if (type === 'text') { newElement.width = 100; newElement.height = 40; }
-                
-                setElements(prev => [...prev, newElement]); 
-                setSelectedId(id); 
-                setMode('select');
-            };
-
-            const finishRoute = () => { setActiveRouteId(null); };
-
-            const changeMode = (newMode) => {
-                if (isViewOnly) return; 
-                setMode(newMode);
-                if (newMode === 'pan') setIsMapLocked(false); else setIsMapLocked(true);
-                if (newMode !== 'route' && activeRouteId) setActiveRouteId(null);
-            };
-
-            // React State to Ref Sync
             const stateRef = useRef({ elements, selectedId, screenshotMode, courierImage, activeRouteId, mode });
             useEffect(() => { stateRef.current = { elements, selectedId, screenshotMode, courierImage, activeRouteId, mode }; }, [elements, selectedId, screenshotMode, courierImage, activeRouteId, mode]);
+
+            useEffect(() => {
+                const handleResize = () => {
+                    setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
+                    if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            useEffect(() => {
+                setMapLoaded(true);
+                const img = new Image();
+                img.src = 'Screenshot_2025-01-04_at_22.24.03-removebg-preview.png';
+                img.onload = () => setCourierImage(img);
+            }, []);
 
             useEffect(() => {
                 if (mapLoaded && mapContainerRef.current && !mapInstanceRef.current && window.L) {
@@ -488,11 +606,421 @@
                     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM', maxZoom: 21 }).addTo(map);
                     mapInstanceRef.current = map;
                     markerRef.current = window.L.marker([coords.lat, coords.lng]).addTo(map);
+                    map.on('move', () => {}); map.on('zoom', () => {});
                 } else if (mapInstanceRef.current) {
                     mapInstanceRef.current.setView([coords.lat, coords.lng]);
                     if (markerRef.current) markerRef.current.setLatLng([coords.lat, coords.lng]);
+                    else if (window.L) markerRef.current = window.L.marker([coords.lat, coords.lng]).addTo(mapInstanceRef.current);
                 }
             }, [mapLoaded, coords]);
+
+            useEffect(() => {
+                if (mapInstanceRef.current) {
+                    if (isViewOnly) {
+                        mapInstanceRef.current.dragging.enable();
+                    } else {
+                        if (isMapLocked) {
+                            if(mode === 'pan') { 
+                                mapInstanceRef.current.dragging.enable(); 
+                            } else { 
+                                mapInstanceRef.current.dragging.disable(); 
+                            }
+                        } else {
+                            mapInstanceRef.current.dragging.enable();
+                        }
+                    }
+                }
+            }, [isMapLocked, mode, isViewOnly]);
+
+            useEffect(() => { if (mapInstanceRef.current) setTimeout(() => mapInstanceRef.current.invalidateSize(), 100); }, [screenshotMode]);
+
+            const changeMode = (newMode) => {
+                if (isViewOnly) return; 
+                setMode(newMode);
+                if (newMode === 'pan') {
+                    setIsMapLocked(false);
+                } else {
+                    setIsMapLocked(true);
+                }
+                
+                if (newMode !== 'route' && activeRouteId) setActiveRouteId(null);
+            };
+
+            const updateSelected = (prop, val) => { if(selectedId) setElements(prev => prev.map(el => el.id === selectedId ? { ...el, [prop]: val } : el)); };
+            const deleteSelected = () => { setElements(prev => prev.filter(el => el.id !== selectedId)); setSelectedId(null); };
+
+            const addElement = (type, subType = null, label = null) => {
+                if (isViewOnly) return; 
+                if (!isMapLocked) setIsMapLocked(true);
+                
+                const center = mapInstanceRef.current.getCenter();
+                const id = Date.now().toString();
+                let newElement = { 
+                    id, type, subType, 
+                    lat: center.lat, lng: center.lng, 
+                    rotation: 0, scale: 1, zIndex: 10, 
+                    color: '#3b82f6', text: type === 'text' ? 'Not...' : (label || ''), speed: 0, crashed: false 
+                };
+                
+                if (type === 'car') { newElement.width = 40; newElement.height = 80; newElement.color = subType === 'red' ? '#ef4444' : '#3b82f6'; }
+                else if (type === 'bus') { newElement.width = 55; newElement.height = 160; newElement.color = '#fbbf24'; }
+                else if (type === 'truck') { newElement.width = 55; newElement.height = 140; newElement.color = '#f59e0b'; }
+                else if (type === 'moto') { newElement.width = 30; newElement.height = 60; newElement.color = subType === 'courier' ? '#7e22ce' : '#10b981'; }
+                else if (type === 'bicycle') { newElement.width = 15; newElement.height = 45; newElement.color = '#ef4444'; }
+                else if (type === 'pedestrian') { newElement.width = 20; newElement.height = 20; newElement.color = '#1e293b'; }
+                else if (type === 'animal') { newElement.width = 25; newElement.height = 25; newElement.color = '#78350f'; }
+                else if (type === 'sign' || type === 'traffic_sign') { newElement.width = 35; newElement.height = 35; } 
+                else if (type === 'signal') { newElement.width = 20; newElement.height = 50; }
+                else if (type === 'refuge') { newElement.width = 30; newElement.height = 100; }
+                else if (type === 'arrow') { newElement.width = 40; newElement.height = 80; newElement.color = '#ffffff'; }
+                else if (type === 'road_defect') { newElement.width = 40; newElement.height = 40; }
+                // --- DÜZELTME: YAZI İÇİN GENİŞLİK VE YÜKSEKLİK ---
+                else if (type === 'text') { newElement.width = 100; newElement.height = 40; }
+                
+                setElements(prev => [...prev, newElement]); setSelectedId(id); setMode('select');
+            };
+
+            // --- ÇİZİM FONKSİYONLARI ---
+            const drawLabel = (ctx, el) => {
+                if (el.text && el.text !== 'Not...') {
+                    ctx.save();
+                    ctx.rotate(-(el.rotation * Math.PI) / 180);
+                    ctx.fillStyle = 'black'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.fillText(el.text, 0, el.height/2 * el.scale + 14);
+                    ctx.restore();
+                }
+            };
+
+            const drawTriangleSign = (ctx, el, fillColor, borderColor, symbolFn) => {
+                const h = el.height; const w = el.width; ctx.beginPath(); ctx.moveTo(0, -h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(-w/2, h/2); ctx.closePath(); ctx.fillStyle = fillColor; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = borderColor; ctx.stroke(); if (symbolFn) symbolFn(ctx, w, h);
+                drawLabel(ctx, el);
+            };
+            const drawInvertedTriangle = (ctx, el) => {
+                const h = el.height; const w = el.width; ctx.beginPath(); ctx.moveTo(-w/2, -h/2); ctx.lineTo(w/2, -h/2); ctx.lineTo(0, h/2); ctx.closePath(); ctx.fillStyle = 'white'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#ef4444'; ctx.stroke();
+                drawLabel(ctx, el);
+            };
+            const drawCircleSign = (ctx, el, fillColor, borderColor, textOrSymbol) => {
+                const r = el.width/2; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fillStyle = fillColor; ctx.fill(); if (borderColor) { ctx.lineWidth = 4; ctx.strokeStyle = borderColor; ctx.stroke(); } if (typeof textOrSymbol === 'string') { ctx.fillStyle = (fillColor === '#ef4444' || fillColor === '#3b82f6') ? 'white' : 'black'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(textOrSymbol, 0, 0); } 
+                drawLabel(ctx, el);
+            };
+            const drawSquareSign = (ctx, el, fillColor, symbolFn) => {
+                ctx.fillStyle = fillColor; ctx.fillRect(-el.width/2, -el.height/2, el.width, el.height); ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.strokeRect(-el.width/2+2, -el.height/2+2, el.width-4, el.height-4); if (symbolFn) symbolFn(ctx, el.width, el.height);
+                drawLabel(ctx, el);
+            };
+            const drawDiamondSign = (ctx, el) => {
+                ctx.beginPath(); ctx.moveTo(0, -el.height/2); ctx.lineTo(el.width/2, 0); ctx.lineTo(0, el.height/2); ctx.lineTo(-el.width/2, 0); ctx.closePath(); ctx.fillStyle = '#facc15'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = 'white'; ctx.stroke(); ctx.lineWidth = 1; ctx.strokeStyle = 'black'; ctx.stroke(); 
+                drawLabel(ctx, el);
+            };
+            const drawArrowHead = (ctx, from, to) => {
+                const headlen = 15; 
+                const dx = to.x - from.x; 
+                const dy = to.y - from.y; 
+                const angle = Math.atan2(dy, dx); 
+                ctx.moveTo(to.x, to.y); 
+                ctx.lineTo(to.x - headlen * Math.cos(angle - Math.PI / 6), to.y - headlen * Math.sin(angle - Math.PI / 6)); 
+                ctx.moveTo(to.x, to.y); 
+                ctx.lineTo(to.x - headlen * Math.cos(angle + Math.PI / 6), to.y - headlen * Math.sin(angle + Math.PI / 6));
+            };
+
+            const drawExplosion = (ctx, w, h) => {
+                 ctx.fillStyle = '#ef4444'; ctx.beginPath();
+                 const spikes=12; const or=w/2; const ir=w/4;
+                 for(let i=0; i<spikes*2; i++){ const r=(i%2===0)?or:ir; const a=(Math.PI*i)/spikes; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
+                 ctx.closePath(); ctx.fill(); 
+                 ctx.fillStyle = '#facc15'; ctx.beginPath(); 
+                 const innerOr = w/3; const innerIr = w/6;
+                 for(let i=0; i<spikes*2; i++){ const r=(i%2===0)?innerOr:innerIr; const a=(Math.PI*i)/spikes; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
+                 ctx.closePath(); ctx.fill();
+                 ctx.fillStyle='black'; ctx.font='bold 10px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('KAZA', 0, 0);
+            };
+
+            const drawCanvas = () => {
+                const canvas = canvasRef.current; 
+                const map = mapInstanceRef.current;
+                if (!canvas || !map) return;
+                
+                const ctx = canvas.getContext('2d');
+                const { elements, selectedId, screenshotMode, courierImage, activeRouteId, mode } = stateRef.current;
+                const mPos = mousePosRef.current;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                elements.forEach(el => {
+                    let screenX, screenY;
+                    let screenPoints = [];
+
+                    if (el.type === 'route') {
+                        screenPoints = el.points.map(p => {
+                            const pt = map.latLngToContainerPoint([p.lat, p.lng]);
+                            return { x: pt.x, y: pt.y };
+                        });
+                    } else {
+                        const pt = map.latLngToContainerPoint([el.lat, el.lng]);
+                        screenX = pt.x;
+                        screenY = pt.y;
+                    }
+
+                    ctx.save();
+
+                    if (el.id === selectedId && !screenshotMode) {
+                        ctx.shadowColor = '#facc15'; ctx.shadowBlur = 20;
+                    }
+
+                    if (el.type === 'route') {
+                        ctx.lineWidth = el.lineWidth || 5;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        if(el.id !== selectedId) { ctx.shadowColor = el.color; ctx.shadowBlur = 10; }
+                        ctx.strokeStyle = el.color;
+                        
+                        ctx.setLineDash([15, 15]); 
+                        const offset = (Date.now() / 20) % 30; 
+                        ctx.lineDashOffset = -offset;
+
+                        ctx.beginPath();
+                        if (screenPoints.length > 0) {
+                            ctx.moveTo(screenPoints[0].x, screenPoints[0].y);
+                            for (let i = 1; i < screenPoints.length; i++) { ctx.lineTo(screenPoints[i].x, screenPoints[i].y); }
+                            
+                            if (el.id === activeRouteId && mode === 'route' && mPos) {
+                                ctx.lineTo(mPos.x, mPos.y);
+                            }
+
+                            let last, prev;
+                            if (el.id === activeRouteId && mPos && screenPoints.length > 0) {
+                                last = mPos;
+                                prev = screenPoints[screenPoints.length - 1];
+                            } else if (screenPoints.length > 1) {
+                                last = screenPoints[screenPoints.length - 1];
+                                
+                                // OK YÖNÜ DÜZELTME (Geriye dönük kontrol)
+                                // Sondan bir önceki noktayı bul (en az 5px uzakta olan)
+                                let pIndex = screenPoints.length - 2;
+                                while (pIndex >= 0) {
+                                    const dist = Math.hypot(last.x - screenPoints[pIndex].x, last.y - screenPoints[pIndex].y);
+                                    if (dist > 5) { // 5 pikselden uzak ilk nokta
+                                        prev = screenPoints[pIndex];
+                                        break;
+                                    }
+                                    pIndex--;
+                                }
+                                // Eğer hiçbiri 5px'den uzak değilse, en azından 0. indexi al (varsa)
+                                if (!prev && screenPoints.length > 1) {
+                                    prev = screenPoints[screenPoints.length - 2];
+                                }
+                            }
+
+                            if (last && prev) {
+                                ctx.stroke(); 
+                                ctx.beginPath(); 
+                                ctx.setLineDash([]); 
+                                drawArrowHead(ctx, prev, last);
+                            }
+                        }
+                        ctx.stroke();
+                        ctx.shadowBlur = 0; ctx.setLineDash([]);
+
+                    } else {
+                        ctx.translate(screenX, screenY); ctx.rotate((el.rotation * Math.PI) / 180); ctx.scale(el.scale, el.scale);
+                        
+                        if (['car', 'truck', 'bus', 'moto', 'bicycle'].includes(el.type)) {
+                            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 4;
+                            if (el.type === 'moto' && el.subType === 'courier') {
+                                let drawn = false;
+                                if (courierImage) { try { ctx.drawImage(courierImage, -el.width/2, -el.height/2, el.width, el.height); drawn = true; } catch (e) {} }
+                                if (!drawn) {
+                                    const purple = '#5D3EBC'; const yellow = '#FFD300'; const w = el.width; const h = el.height;
+                                    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5;
+                                    ctx.fillStyle = purple; roundRect(ctx, -w/2, -h/2, w, h, 4); ctx.fill();
+                                    ctx.fillStyle = yellow; ctx.fillRect(-w/2 + 2, h/2 - 18, w - 4, 16);
+                                    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(0, -h/2 + 10, 6, 0, Math.PI*2); ctx.fill();
+                                    ctx.fillStyle = purple; ctx.beginPath(); ctx.ellipse(0, -h/2 + 18, 10, 4, 0, 0, Math.PI*2); ctx.fill();
+                                    ctx.shadowBlur = 0;
+                                }
+                            } else if (el.type === 'car') draw3DCar(ctx, el.width, el.height, el.color);
+                            else if (el.type === 'bus') draw3DBus(ctx, el.width, el.height, el.color);
+                            else if (el.type === 'truck') draw3DTruck(ctx, el.width, el.height, el.color);
+                            else {
+                                ctx.fillStyle = el.color;
+                                if(el.type==='bicycle') { roundRect(ctx, -el.width/2, -el.height/2, el.width, el.height, 5); ctx.fill(); ctx.fillStyle = '#cbd5e1'; ctx.fillRect(-10, -el.height/2 + 5, 20, 2); }
+                                else { roundRect(ctx, -el.width/2, -el.height/2, el.width, el.height, 4); ctx.fill(); }
+                            }
+                            ctx.shadowBlur = 0;
+                        }
+                        else if (el.type === 'road_defect') {
+                            if(el.subType==='pothole') { ctx.fillStyle='#374151'; ctx.beginPath(); ctx.ellipse(0,0,el.width/2,el.height/2,0,0,Math.PI*2); ctx.fill(); drawLabel(ctx, el);}
+                            else if(el.subType==='slippery') { ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-10,-10); ctx.bezierCurveTo(0,-10,-10,0,0,0); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-10,5); ctx.bezierCurveTo(0,5,-10,15,0,15); ctx.stroke(); drawLabel(ctx, el);}
+                        }
+                        else if (el.type === 'sign' && el.subType === 'crash_point') {
+                            drawExplosion(ctx, el.width, el.height);
+                        }
+                        else if (el.type === 'traffic_sign') {
+                             if (el.subType === 'danger_general') drawTriangleSign(ctx, el, 'white', '#ef4444', (c)=>{c.fillStyle='black';c.font='bold 20px Arial';c.textAlign='center';c.fillText('!',0,5)});
+                             else if (el.subType === 'limit_speed') drawCircleSign(ctx, el, 'white', '#ef4444', el.text);
+                             else if (el.subType === 'no_entry') drawCircleSign(ctx, el, '#ef4444', null, (c,r)=>{c.fillStyle='white';c.fillRect(-r+5,-3,r*2-10,6)});
+                             else if (el.subType === 'priority_stop') {ctx.fillStyle='#ef4444';ctx.beginPath();for(let i=0;i<8;i++){const a=(Math.PI/4)*i+Math.PI/8;ctx.lineTo(Math.cos(a)*el.width/2,Math.sin(a)*el.height/2)}ctx.closePath();ctx.fill();ctx.fillStyle='white';ctx.font='bold 10px Arial';ctx.textAlign='center';ctx.fillText('DUR',0,0); drawLabel(ctx, el);}
+                             else if (el.subType === 'info_parking') drawSquareSign(ctx, el, '#3b82f6', (c)=>{c.fillStyle='white';c.font='bold 20px Arial';c.textAlign='center';c.fillText('P',0,5)});
+                             else if (el.subType === 'priority_yield') drawInvertedTriangle(ctx, el);
+                             else if (el.subType === 'priority_main') drawDiamondSign(ctx, el);
+                             else if (el.subType === 'danger_pedestrian') drawTriangleSign(ctx, el, 'white', '#ef4444', (c)=>{c.fillStyle='black';c.font='bold 20px Arial';c.textAlign='center';c.fillText('🚶',0,5)});
+                             else if (el.subType === 'danger_intersection') drawTriangleSign(ctx, el, 'white', '#ef4444', (c)=>{c.fillStyle='black';c.font='bold 20px Arial';c.textAlign='center';c.fillText('✖',0,5)});
+                             else if (el.subType === 'danger_train') drawTriangleSign(ctx, el, 'white', '#ef4444', (c)=>{c.fillStyle='black';c.font='bold 20px Arial';c.textAlign='center';c.fillText('🚂',0,5)});
+                             else if (el.subType === 'danger_gravel') drawTriangleSign(ctx, el, 'white', '#ef4444', (c)=>{c.fillStyle='black';c.font='bold 20px Arial';c.textAlign='center';c.fillText('.:',0,5)});
+                        }
+                        else if (el.type === 'signal') {
+                             ctx.fillStyle='#1f2937'; ctx.fillRect(-10,-25,20,50); ctx.fillStyle='#4b5563'; 
+                             ctx.beginPath(); ctx.arc(0,-15,6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(0,0,6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(0,15,6,0,Math.PI*2); ctx.fill();
+                             if(el.subType==='red'){ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(0,-15,6,0,Math.PI*2);ctx.fill()}
+                             else if(el.subType==='yellow'){ctx.fillStyle='#eab308';ctx.beginPath();ctx.arc(0,0,6,0,Math.PI*2);ctx.fill()}
+                             else if(el.subType==='green'){ctx.fillStyle='#22c55e';ctx.beginPath();ctx.arc(0,15,6,0,Math.PI*2);ctx.fill()}
+                        }
+                        else if (el.type === 'refuge') {
+                             ctx.shadowColor='rgba(0,0,0,0.3)'; ctx.shadowBlur=5;
+                             ctx.fillStyle = '#cbd5e1'; // Beton rengi
+                             roundRect(ctx, -el.width/2, -el.height/2, el.width, el.height, 8);
+                             ctx.fill();
+                             ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.stroke(); // Kenarlık
+                             
+                             // Taralı çizgiler
+                             ctx.beginPath();
+                             ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+                             for(let i = -el.height/2 + 10; i < el.height/2; i+=15) {
+                                 ctx.moveTo(-el.width/2 + 5, i);
+                                 ctx.lineTo(el.width/2 - 5, i + 8);
+                             }
+                             ctx.stroke();
+                             ctx.shadowBlur=0;
+                        }
+                        else if(el.type==='arrow') { ctx.fillStyle=el.color||'#ffffff'; ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=2; if(el.subType==='straight'){ctx.beginPath();ctx.moveTo(-5,20);ctx.lineTo(-5,-10);ctx.lineTo(-15,-10);ctx.lineTo(0,-30);ctx.lineTo(15,-10);ctx.lineTo(5,-10);ctx.lineTo(5,20);ctx.fill()} else if(el.subType==='turn_left'){ctx.beginPath();ctx.moveTo(10,20);ctx.lineTo(0,20);ctx.quadraticCurveTo(-10,20,-10,10);ctx.lineTo(-10,0);ctx.lineTo(-20,0);ctx.lineTo(0,-20);ctx.lineTo(20,0);ctx.lineTo(10,0);ctx.lineTo(10,10);ctx.fill()} else if(el.subType==='turn_right'){ctx.scale(-1,1);ctx.beginPath();ctx.moveTo(10,20);ctx.lineTo(0,20);ctx.quadraticCurveTo(-10,20,-10,10);ctx.lineTo(-10,0);ctx.lineTo(-20,0);ctx.lineTo(0,-20);ctx.lineTo(20,0);ctx.lineTo(10,0);ctx.lineTo(10,10);ctx.fill();ctx.scale(-1,1)} ctx.shadowBlur=0; }
+                        else if(el.type==='text') { ctx.font='bold 16px Arial'; ctx.fillStyle=el.color||'#000'; ctx.strokeStyle='white'; ctx.lineWidth=3; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.strokeText(el.text,0,0); ctx.fillText(el.text,0,0); }
+                        else if(el.type==='pedestrian') { ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=3; ctx.fillStyle=el.color; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#64748b'; ctx.beginPath(); ctx.ellipse(0,0,12,6,0,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; } 
+                        else if(el.type==='animal') { ctx.fillStyle=el.color; ctx.beginPath(); ctx.arc(0,2,6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-6,-5,2.5,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(0,-8,2.5,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(6,-5,2.5,0,Math.PI*2); ctx.fill(); }
+
+                        if (selectedId === el.id && !screenshotMode && el.type !== 'route') {
+                            ctx.strokeStyle='#2563eb'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+                            const bw = (el.type==='arrow'?40:el.width)*el.scale; const bh = (el.type==='arrow'?60:el.height)*el.scale;
+                            ctx.strokeRect(-bw/2-5, -bh/2-5, bw+10, bh+10);
+                            ctx.beginPath(); ctx.moveTo(0, -bh/2-5); ctx.lineTo(0, -bh/2-25); ctx.stroke();
+                            ctx.beginPath(); ctx.arc(0, -bh/2-25, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.stroke();
+                            ctx.setLineDash([]);
+                        }
+                    }
+                    ctx.restore();
+                });
+            };
+
+            // Animasyon Döngüsü
+            useEffect(() => {
+                let animationFrameId;
+                const render = () => {
+                    drawCanvas();
+                    animationFrameId = requestAnimationFrame(render);
+                };
+                render();
+                return () => cancelAnimationFrame(animationFrameId);
+            }, []); 
+
+            const handlePointerDown = (e) => {
+                if (isViewOnly) return; 
+                if (!isMapLocked) return;
+                const rect = canvasRef.current.getBoundingClientRect();
+                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left; const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+                
+                const latlng = mapInstanceRef.current.containerPointToLatLng([x, y]);
+
+                if (mode === 'route') { 
+                    if (activeRouteId) {
+                        setElements(prev => prev.map(el => {
+                            if (el.id === activeRouteId) {
+                                return { ...el, points: [...el.points, {lat: latlng.lat, lng: latlng.lng}] };
+                            }
+                            return el;
+                        }));
+                    } else {
+                        const newEl = { 
+                            id: Date.now().toString(), 
+                            type: 'route', 
+                            points: [{lat: latlng.lat, lng: latlng.lng}], 
+                            color: drawingColor, 
+                            lineWidth: drawingWidth, 
+                            zIndex: 100 
+                        }; 
+                        setElements(prev => [...prev, newEl]); 
+                        setActiveRouteId(newEl.id);
+                        setSelectedId(newEl.id); 
+                    }
+                    return; 
+                }
+                
+                if (mode === 'eraser') {
+                     const clickedIds = [];
+                     const rev = [...elements].reverse();
+                     for (let el of rev) {
+                         if (el.type === 'route') {
+                             for (let p of el.points) {
+                                 const pt = mapInstanceRef.current.latLngToContainerPoint([p.lat, p.lng]);
+                                 if (Math.hypot(pt.x - x, pt.y - y) < 20) { clickedIds.push(el.id); break; } 
+                             }
+                         } else {
+                             const pt = mapInstanceRef.current.latLngToContainerPoint([el.lat, el.lng]);
+                             const hw = (el.width*el.scale)/2; const hh = (el.height*el.scale)/2; 
+                             if (Math.abs(pt.x - x) < hw+15 && Math.abs(pt.y - y) < hh+15) { clickedIds.push(el.id); break; } 
+                         }
+                     }
+                     if(clickedIds.length > 0) {
+                         setElements(prev => prev.filter(el => el.id !== clickedIds[0]));
+                         setSelectedId(null);
+                         if(clickedIds[0] === activeRouteId) setActiveRouteId(null);
+                     }
+                     return;
+                }
+
+                let clickedId = null; const rev = [...elements].reverse();
+                for (let el of rev) { 
+                    if (el.type === 'route') {
+                        for (let p of el.points) {
+                            const pt = mapInstanceRef.current.latLngToContainerPoint([p.lat, p.lng]);
+                            if (Math.hypot(pt.x - x, pt.y - y) < 20) { clickedId = el.id; break; }
+                        }
+                    } else {
+                        const pt = mapInstanceRef.current.latLngToContainerPoint([el.lat, el.lng]);
+                        const hw = (el.width*el.scale)/2; const hh = (el.height*el.scale)/2; 
+                        if (Math.abs(pt.x - x) < hw+15 && Math.abs(pt.y - y) < hh+15) { clickedId = el.id; break; } 
+                    }
+                    if (clickedId) break;
+                }
+                if (clickedId) { 
+                    setSelectedId(clickedId); 
+                    setAction('moving'); 
+                    setDragStart(latlng); 
+                } else { setSelectedId(null); setAction('none'); }
+            };
+
+            const handlePointerMove = (e) => {
+                if (isViewOnly) return; 
+                if (!isMapLocked) return;
+                const rect = canvasRef.current.getBoundingClientRect();
+                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left; const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+                const latlng = mapInstanceRef.current.containerPointToLatLng([x, y]);
+                mousePosRef.current = {x, y};
+
+                if (action === 'moving' && selectedId) { 
+                    const dLat = latlng.lat - dragStart.lat;
+                    const dLng = latlng.lng - dragStart.lng;
+                    setElements(prev => prev.map(el => {
+                        if (el.id === selectedId) {
+                            if (el.type === 'route') {
+                                return { ...el, points: el.points.map(p => ({ lat: p.lat + dLat, lng: p.lng + dLng })) };
+                            }
+                            return { ...el, lat: el.lat + dLat, lng: el.lng + dLng };
+                        }
+                        return el;
+                    })); 
+                    setDragStart(latlng); 
+                }
+            };
+            const handlePointerUp = () => setAction('none');
+            
+            const finishRoute = () => { setActiveRouteId(null); };
 
             return (
                 <div className="flex flex-col h-screen bg-slate-100 font-sans overflow-hidden">
@@ -524,7 +1052,7 @@
                                     <Icon name="help-circle" size={14}/> Nasıl Kullanılır?
                                 </button>
                                 {!isViewOnly && (
-                                    <button onClick={downloadAsHtml} className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700">
+                                    <button onClick={downloadAsHtml} className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700" title="Bu projeyi interaktif bir HTML dosyası olarak indir">
                                         <Icon name="download" size={14}/> HTML İndir
                                     </button>
                                 )}
@@ -535,6 +1063,7 @@
                         </div>
                     )}
 
+                    {/* YARDIM MODALI */}
                     {showHelp && (
                         <div className="absolute inset-0 z-50 flex items-center justify-center modal-overlay p-4" onClick={() => setShowHelp(false)}>
                             <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -547,30 +1076,33 @@
                                         <div className="help-icon"><Icon name="map-pin"/></div>
                                         <div className="help-content">
                                             <h4>1. Konum Belirleme</h4>
-                                            <p>Haritayı kaydırarak veya koordinat girerek kaza yerine gidin.</p>
+                                            <p>Harita üzerinde sürükleyerek veya üst bardaki koordinat kutucuklarına girerek kaza mahalline gidin.</p>
                                         </div>
                                     </div>
                                     <div className="help-step">
                                         <div className="help-icon"><Icon name="car"/></div>
                                         <div className="help-content">
                                             <h4>2. Araç ve Nesne Ekleme</h4>
-                                            <p>Sol menüden otomobil, yaya, tabela gibi nesneleri haritaya ekleyin.</p>
+                                            <p>Sol menüdeki sekmelerden nesneye tıklayın. Nesne haritanın ortasına gelecektir.</p>
                                         </div>
                                     </div>
                                     <div className="help-step">
                                         <div className="help-icon"><Icon name="move"/></div>
                                         <div className="help-content">
-                                            <h4>3. Taşıma ve Döndürme</h4>
-                                            <p>Eklenen nesneleri sürükleyin. Seçtiğinizde açılan ayarlardan <strong>Yön</strong> ve <strong>Boyut</strong> değiştirin.</p>
+                                            <h4>3. Düzenleme</h4>
+                                            <p>Nesneyi sürükleyin. Seçili nesnenin <strong>Yönünü</strong> ve <strong>Boyutunu</strong> ayarlayabilirsiniz.</p>
                                         </div>
                                     </div>
                                     <div className="help-step">
-                                        <div className="help-icon"><Icon name="type"/></div>
+                                        <div className="help-icon"><Icon name="brain-circuit"/></div>
                                         <div className="help-content">
-                                            <h4>4. Yazı ve Not Ekleme</h4>
-                                            <p><strong>Yazı</strong> butonuna basarak not ekleyin. Yazıyı seçip sol menüden metnini düzenleyebilirsiniz.</p>
+                                            <h4>4. Analiz</h4>
+                                            <p><strong>"Analiz Et"</strong> butonuna basarak yapay zeka destekli kaza raporunu oluşturun.</p>
                                         </div>
                                     </div>
+                                </div>
+                                <div className="p-4 border-t text-center">
+                                    <button onClick={() => setShowHelp(false)} className="bg-orange-500 text-white px-6 py-2 rounded font-bold">Anladım</button>
                                 </div>
                             </div>
                         </div>
@@ -579,20 +1111,30 @@
                     <div className="flex flex-1 overflow-hidden relative">
                         {!screenshotMode && !isViewOnly && (
                             <div className="w-64 bg-white border-r z-20 flex flex-col overflow-y-auto shadow-lg">
+                                
                                 <div className="flex-1">
+                                    
                                     <div className="p-2 border-b space-y-2">
                                         <div className="flex gap-2">
                                             <button onClick={()=>changeMode('select')} className={`flex-1 p-1 border rounded ${mode==='select'?'bg-blue-100':''}`} title="Seç"><Icon name="mouse-pointer-2" size={16} className="mx-auto"/></button>
-                                            <button onClick={()=>changeMode('route')} className={`flex-1 p-1 border rounded ${mode==='route'?'bg-blue-100':''}`} title="Rota Çiz"><Icon name="route" size={16} className="mx-auto"/></button>
+                                            <button onClick={()=>changeMode('route')} className={`flex-1 p-1 border rounded ${mode==='route'?'bg-blue-100':''}`} title="Rota Çiz (Yol)"><Icon name="route" size={16} className="mx-auto"/></button>
                                             <button onClick={()=>changeMode('eraser')} className={`flex-1 p-1 border rounded ${mode==='eraser'?'bg-blue-100':''}`} title="Silgi"><Icon name="eraser" size={16} className="mx-auto"/></button>
                                             <button onClick={()=>changeMode('pan')} className={`flex-1 p-1 border rounded ${mode==='pan'?'bg-blue-100':''}`} title="Haritayı Kaydır"><Icon name="hand" size={16} className="mx-auto"/></button>
                                         </div>
-                                        {mode==='route' && (
+                                        
+                                        {(mode==='route') && (
                                             <div className="flex flex-col gap-2">
-                                                {activeRouteId && <button onClick={finishRoute} className="w-full py-1 bg-green-100 text-green-700 text-xs font-bold rounded border border-green-200">✓ Rotayı Bitir</button>}
+                                                {activeRouteId && (
+                                                    <button onClick={finishRoute} className="w-full py-1 bg-green-100 text-green-700 text-xs font-bold rounded border border-green-200 hover:bg-green-200">
+                                                        ✓ Rotayı Bitir
+                                                    </button>
+                                                )}
                                                 <div className="flex gap-2 items-center">
-                                                    <input type="color" value={drawingColor} onChange={e=>setDrawingColor(e.target.value)} className="w-8 h-6 rounded border"/>
-                                                    <input type="range" min="1" max="20" value={drawingWidth} onChange={e=>setDrawingWidth(parseInt(e.target.value))} className="flex-1 h-1"/>
+                                                    <input type="color" value={drawingColor} onChange={e=>setDrawingColor(e.target.value)} className="w-8 h-6 rounded cursor-pointer border"/>
+                                                    <div className="flex-1 flex items-center gap-1">
+                                                        <span className="text-[8px] text-gray-500">Kalınlık:</span>
+                                                        <input type="range" min="1" max="20" value={drawingWidth} onChange={e=>setDrawingWidth(parseInt(e.target.value))} className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"/>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
@@ -602,39 +1144,82 @@
                                         <ButtonEl onClick={()=>addElement('moto','courier')} icon="bike" label="Kurye" color="text-purple-700" bg="bg-purple-50"/>
                                         <ButtonEl onClick={()=>addElement('car','blue')} icon="car" label="Oto A" color="text-blue-600"/>
                                         <ButtonEl onClick={()=>addElement('car','red')} icon="car" label="Oto B" color="text-red-600"/>
-                                        <ButtonEl onClick={()=>addElement('bus')} icon="bus" label="Otobüs"/>
-                                        <ButtonEl onClick={()=>addElement('truck')} icon="truck" label="Kamyon"/>
+                                        <ButtonEl onClick={()=>addElement('bus')} icon="bus" label="Otobüs" color="text-yellow-600"/>
+                                        <ButtonEl onClick={()=>addElement('truck')} icon="truck" label="Kamyon" color="text-orange-600"/>
+                                        <ButtonEl onClick={()=>addElement('moto')} icon="bike" label="Moto" color="text-green-600"/>
+                                        <ButtonEl onClick={()=>addElement('bicycle')} icon="bike" label="Bisiklet" color="text-red-500"/>
                                         <ButtonEl onClick={()=>addElement('pedestrian')} icon="user" label="Yaya"/>
                                     </MenuItem>
 
-                                    <MenuItem id="env" title="Çevre & Çarpışma" icon="sun">
-                                        <ButtonEl onClick={()=>addElement('sign','crash_point')} icon="zap" label="Çarpışma" color="text-red-600" bg="bg-red-50"/>
-                                        <ButtonEl onClick={()=>setEnvironment({...environment, weather:'Yağmurlu'})} icon="cloud-rain" label="Yağmur"/>
-                                        <ButtonEl onClick={()=>setEnvironment({...environment, lighting:'Gece'})} icon="moon" label="Gece"/>
+                                    <MenuItem id="env" title="Çevre Durumu" icon="sun">
+                                        <div className="col-span-4 text-[10px] font-bold text-orange-500">AYDINLATMA</div>
+                                        <button onClick={()=>setEnvironment({...environment, lighting: 'Gündüz'})} className="col-span-2 p-1 border rounded text-[9px] flex gap-1"><Icon name="sun" size={12} className="text-orange-500"/> Gündüz</button>
+                                        <button onClick={()=>setEnvironment({...environment, lighting: 'Gece (İyi)'})} className="col-span-2 p-1 border rounded text-[9px] flex gap-1"><Icon name="moon" size={12} className="text-blue-800"/> Gece (İyi)</button>
+                                        <button onClick={()=>setEnvironment({...environment, lighting: 'Gece (Kötü)'})} className="col-span-2 p-1 border rounded text-[9px] flex gap-1"><Icon name="moon" size={12} className="text-black"/> Gece (Kötü)</button>
+                                        <button onClick={()=>setEnvironment({...environment, lighting: 'Alacakaranlık'})} className="col-span-2 p-1 border rounded text-[9px] flex gap-1"><Icon name="cloud-sun" size={12} className="text-purple-500"/> Alacakaranlık</button>
+
+                                        <div className="col-span-4 text-[10px] font-bold text-blue-500 mt-2">HAVA DURUMU</div>
+                                        <ButtonEl onClick={()=>setEnvironment({...environment, weather: 'Güneşli'})} icon="sun" label="Güneşli" color="text-orange-500"/>
+                                        <ButtonEl onClick={()=>setEnvironment({...environment, weather: 'Yağmurlu'})} icon="cloud-rain" label="Yağmur" color="text-blue-600"/>
+                                        <ButtonEl onClick={()=>setEnvironment({...environment, weather: 'Karlı'})} icon="cloud-snow" label="Kar" color="text-sky-400"/>
+                                        <ButtonEl onClick={()=>setEnvironment({...environment, weather: 'Sisli'})} icon="cloud-fog" label="Sis" color="text-gray-400"/>
+                                        
+                                        <div className="col-span-4 border-t mt-2 pt-1"></div>
+                                        <ButtonEl onClick={()=>addElement('sign','crash_point')} icon="zap" label="Çarpışma Noktası" color="text-red-600" bg="bg-red-50"/>
                                     </MenuItem>
 
                                     <MenuItem id="road" title="Yol & Trafik" icon="arrow-up">
+                                        <ButtonEl onClick={()=>addElement('traffic_sign','danger_pedestrian', 'Yaya Geçidi')} icon="triangle" label="Yaya Geçidi" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('traffic_sign','danger_intersection', 'Kavşak')} icon="triangle" label="Kavşak" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('traffic_sign','danger_train', 'Tren Yolu')} icon="triangle" label="Tren Yolu" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('traffic_sign','danger_gravel', 'Mıcır')} icon="triangle" label="Mıcır" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('traffic_sign','limit_speed','50')} icon="circle" label="50" color="text-red-500"/>
                                         <ButtonEl onClick={()=>addElement('traffic_sign','priority_stop')} icon="octagon" label="DUR" color="text-red-500"/>
-                                        <ButtonEl onClick={()=>addElement('signal','red')} icon="traffic-cone" label="Işıklar" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('signal','red')} icon="traffic-cone" label="Kırmızı Işık" color="text-red-500"/>
+                                        <ButtonEl onClick={()=>addElement('signal','green')} icon="traffic-cone" label="Yeşil Işık" color="text-green-500"/>
+                                        <ButtonEl onClick={()=>addElement('road_defect','pothole')} icon="circle" label="Çukur"/>
+                                        <ButtonEl onClick={()=>addElement('road_defect','slippery')} icon="waves" label="Kaygan"/>
+                                        <ButtonEl onClick={()=>addElement('refuge')} icon="minus" label="Refüj" color="text-slate-500 rotate-90"/>
                                         <ButtonEl onClick={()=>addElement('text')} icon="type" label="Yazı" />
                                     </MenuItem>
 
                                     {selectedId && (
                                         <div className="p-2 m-2 bg-blue-50 rounded border border-blue-100">
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-[10px] font-bold text-blue-800 uppercase">Düzenle</span>
+                                                <span className="text-[10px] font-bold text-blue-800">DÜZENLE</span>
                                                 <button onClick={()=>{setElements(prev=>prev.filter(el=>el.id!==selectedId));setSelectedId(null)}} className="text-red-500"><Icon name="trash-2" size={14}/></button>
                                             </div>
-                                            <div className="space-y-2">
-                                                {elements.find(e=>e.id===selectedId)?.type === 'text' && (
+                                            
+                                            {(elements.find(e=>e.id===selectedId)?.type === 'route') ? (
+                                                <div className="space-y-2">
                                                     <div>
-                                                        <label className="text-[9px] block mb-1">Yazı İçeriği</label>
-                                                        <input type="text" className="w-full p-1 text-xs border rounded" value={elements.find(e=>e.id===selectedId)?.text || ''} onChange={e=>updateSelected('text', e.target.value)}/>
+                                                        <label className="text-[9px] block text-gray-500 mb-1">Çizgi Kalınlığı</label>
+                                                        <input 
+                                                            type="range" min="1" max="20" 
+                                                            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
+                                                            value={elements.find(e=>e.id===selectedId)?.lineWidth || 5} 
+                                                            onChange={e=>updateSelected('lineWidth', parseInt(e.target.value))}
+                                                        />
                                                     </div>
-                                                )}
-                                                <div><label className="text-[9px] block">Yön</label><input type="range" min="0" max="360" className="w-full" value={elements.find(e=>e.id===selectedId)?.rotation || 0} onChange={e=>updateSelected('rotation', parseInt(e.target.value))}/></div>
-                                                <div><label className="text-[9px] block">Boyut</label><input type="range" min="0.5" max="3" step="0.1" className="w-full" value={elements.find(e=>e.id===selectedId)?.scale || 1} onChange={e=>updateSelected('scale', parseFloat(e.target.value))}/></div>
-                                            </div>
+                                                    <div>
+                                                        <label className="text-[9px] block text-gray-500 mb-1">Renk</label>
+                                                        <input 
+                                                            type="color" 
+                                                            className="w-full h-6 rounded border cursor-pointer"
+                                                            value={elements.find(e=>e.id===selectedId)?.color || '#ef4444'} 
+                                                            onChange={e=>updateSelected('color', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <div><label className="text-[9px] block">Yön</label><input type="range" min="0" max="360" className="w-full" value={elements.find(e=>e.id===selectedId)?.rotation || 0} onChange={e=>{if(selectedId)setElements(prev=>prev.map(el=>el.id===selectedId?{...el,rotation:parseInt(e.target.value)}:el))}}/></div>
+                                                    <div><label className="text-[9px] block">Boyut</label><input type="range" min="0.5" max="3" step="0.1" className="w-full" value={elements.find(e=>e.id===selectedId)?.scale || 1} onChange={e=>{if(selectedId)setElements(prev=>prev.map(el=>el.id===selectedId?{...el,scale:parseFloat(e.target.value)}:el))}}/></div>
+                                                    {(elements.find(e=>e.id===selectedId)?.type==='text' || (elements.find(e=>e.id===selectedId)?.type==='traffic_sign' && elements.find(e=>e.id===selectedId)?.subType === 'limit_speed')) && (
+                                                        <input type="text" className="w-full p-1 text-xs border rounded" value={elements.find(e=>e.id===selectedId)?.text || ''} onChange={e=>updateSelected('text',e.target.value)}/>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -642,8 +1227,97 @@
                         )}
 
                         <div className="flex-1 relative bg-gray-200 overflow-hidden">
-                            <div ref={mapContainerRef} className="absolute inset-0 z-0"></div>
+                            <div ref={mapContainerRef} className="absolute inset-0 z-0" style={{filter: isMapLocked?'grayscale(30%)':'none'}}></div>
                             
+                            {(environment.lighting || environment.weather) && (
+                                <div className="absolute top-4 right-4 z-10 bg-white/90 p-2 rounded shadow border border-slate-200 text-xs pointer-events-none">
+                                    {environment.lighting && <div><strong>Aydınlatma:</strong> {environment.lighting}</div>}
+                                    {environment.weather && <div><strong>Hava:</strong> {environment.weather}</div>}
+                                </div>
+                            )}
+                            
+                            {!screenshotMode && (
+                                <div className="absolute bottom-4 right-4 z-10 bg-white/90 p-2 rounded shadow border border-slate-200 w-64">
+                                    <div className="text-[10px] font-bold text-gray-600 mb-1 flex justify-between items-center">
+                                        <span>Sokak Görünümü</span>
+                                        <div className="flex gap-1">
+                                            <button 
+                                                onClick={() => setStreetViewMode('image')}
+                                                className={`px-2 py-0.5 rounded text-[9px] border ${streetViewMode === 'image' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 text-gray-500'}`}
+                                            >
+                                                Resim
+                                            </button>
+                                            <button 
+                                                onClick={() => setStreetViewMode('embed')}
+                                                className={`px-2 py-0.5 rounded text-[9px] border flex items-center gap-1 ${streetViewMode === 'embed' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 text-gray-500'}`}
+                                            >
+                                                <Icon name="rotate-3d" size={10}/> 360°
+                                            </button>
+                                        </div>
+                                        <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coords.lat},${coords.lng}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-[8px]">
+                                            <Icon name="external-link" size={10}/>
+                                        </a>
+                                    </div>
+                                    
+                                    <div className="w-full h-40 bg-gray-200 rounded overflow-hidden relative group">
+                                        {streetViewMode === 'image' ? (
+                                            <>
+                                                <img 
+                                                    src={`https://cbk0.google.com/cbk?output=thumbnail&w=320&h=240&ll=${coords.lat},${coords.lng}`} 
+                                                    alt="Sokak Görünümü" 
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {e.target.style.display='none'; e.target.parentElement.querySelector('.fallback').style.display='flex'}}
+                                                />
+                                                <div className="fallback absolute inset-0 hidden items-center justify-center text-[9px] text-gray-500 text-center bg-gray-100 p-2">
+                                                    Görüntü yok veya API erişilemiyor
+                                                </div>
+                                            </>
+                                        ) : (
+                                            apiKey ? (
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    style={{border:0}}
+                                                    loading="lazy"
+                                                    allowFullScreen
+                                                    src={`https://www.google.com/maps/embed/v1/streetview?key=${apiKey}&location=${coords.lat},${coords.lng}`}
+                                                ></iframe>
+                                            ) : (
+                                                <div className="absolute inset-0 bg-gray-100 flex flex-col items-center justify-center p-2 text-center">
+                                                    <p className="text-[9px] text-gray-600 mb-2 font-bold">Canlı 360° görünüm için Google Maps API Anahtarı gereklidir.</p>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="API Key Giriniz" 
+                                                        className="w-full p-1 border rounded text-[9px] mb-1"
+                                                        value={tempKey}
+                                                        onChange={(e) => setTempKey(e.target.value)}
+                                                    />
+                                                    <button onClick={saveApiKey} className="bg-blue-600 text-white px-2 py-1 rounded text-[9px] w-full">Kaydet</button>
+                                                    <p className="text-[8px] text-gray-400 mt-1">Tarayıcıya kaydedilir.</p>
+                                                </div>
+                                            )
+                                        )}
+                                        {streetViewMode === 'embed' && apiKey && (
+                                            <button onClick={clearApiKey} className="absolute top-1 right-1 bg-white/80 p-1 rounded text-[8px] text-red-500 hover:bg-white" title="Anahtarı Sil">
+                                                <Icon name="x" size={10}/>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ANALİZ MODALI */}
+                            {isAnalyzing && (
+                                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                                    <div className="bg-white p-6 rounded-lg shadow-2xl animate-pulse">
+                                        <h2 className="text-xl font-bold mb-2 text-purple-700 flex items-center gap-2">
+                                            <Icon name="brain-circuit" className="animate-spin"/> Analiz Yapılıyor...
+                                        </h2>
+                                        <p className="text-sm text-gray-600">Harita verileri taranıyor...</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {analysisReport && (
                                 <div className="absolute top-14 left-4 right-4 md:left-auto md:right-4 md:w-80 z-40 bg-white rounded-lg shadow-2xl border border-purple-200 flex flex-col max-h-[80vh]">
                                     <div className="p-3 bg-purple-600 text-white rounded-t-lg flex justify-between items-center">
@@ -658,45 +1332,10 @@
 
                             <canvas 
                                 ref={canvasRef} width={canvasSize.width} height={canvasSize.height}
-                                className={`absolute inset-0 z-10 ${isMapLocked&&mode!=='pan'?'cursor-crosshair pointer-events-auto':'pointer-events-none'}`}
-                                onMouseDown={(e) => {
-                                    if (isViewOnly || !isMapLocked) return;
-                                    const rect = canvasRef.current.getBoundingClientRect();
-                                    const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                                    const latlng = mapInstanceRef.current.containerPointToLatLng([x, y]);
-                                    if (mode === 'route') {
-                                        if (activeRouteId) {
-                                            setElements(prev => prev.map(el => el.id === activeRouteId ? { ...el, points: [...el.points, {lat: latlng.lat, lng: latlng.lng}] } : el));
-                                        } else {
-                                            const newId = Date.now().toString();
-                                            setElements(prev => [...prev, { id: newId, type: 'route', points: [{lat: latlng.lat, lng: latlng.lng}], color: drawingColor, lineWidth: drawingWidth }]);
-                                            setActiveRouteId(newId);
-                                        }
-                                        return;
-                                    }
-                                    let clickedId = null;
-                                    [...elements].reverse().forEach(el => {
-                                        if(clickedId) return;
-                                        if(el.type === 'route') return;
-                                        const pt = mapInstanceRef.current.latLngToContainerPoint([el.lat, el.lng]);
-                                        const hw = (el.width*el.scale)/2; const hh = (el.height*el.scale)/2;
-                                        if (Math.abs(pt.x - x) < hw+15 && Math.abs(pt.y - y) < hh+15) clickedId = el.id;
-                                    });
-                                    if (clickedId) { setSelectedId(clickedId); setAction('moving'); setDragStart(latlng); } else { setSelectedId(null); }
-                                }}
-                                onMouseMove={(e) => {
-                                    if (isViewOnly || !isMapLocked) return;
-                                    const rect = canvasRef.current.getBoundingClientRect();
-                                    const x = e.clientX - rect.left; const y = e.clientY - rect.top;
-                                    const latlng = mapInstanceRef.current.containerPointToLatLng([x, y]);
-                                    mousePosRef.current = {x, y};
-                                    if (action === 'moving' && selectedId) {
-                                        const dLat = latlng.lat - dragStart.lat; const dLng = latlng.lng - dragStart.lng;
-                                        setElements(prev => prev.map(el => el.id === selectedId ? { ...el, lat: el.lat + dLat, lng: el.lng + dLng } : el));
-                                        setDragStart(latlng);
-                                    }
-                                }}
-                                onMouseUp={() => setAction('none')}
+                                className={`absolute inset-0 z-10 ${isMapLocked&&mode!=='pan'?'cursor-crosshair pointer-events-auto':'pointer-events-none'} ${!screenshotMode?'border-dashed border-slate-400 shadow-2xl':''}`}
+                                style={{pointerEvents: mode === 'pan' ? 'none' : 'auto'}}
+                                onMouseDown={handlePointerDown} onMouseMove={handlePointerMove} onMouseUp={handlePointerUp} onMouseLeave={handlePointerUp}
+                                onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}
                             />
                             {screenshotMode && <div className="absolute top-4 left-4 z-30 bg-black/80 text-white p-3 rounded text-center"><h3 className="font-bold">Foto Modu</h3><button onClick={()=>setScreenshotMode(false)} className="bg-white text-black px-2 py-1 rounded text-xs mt-2 font-bold">Kapat</button></div>}
                         </div>
@@ -709,4 +1348,4 @@
         root.render(<MapAccidentSketch />);
     </script>
 </body>
-</html>
+</html> eof
