@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v25.4</title>
+    <title>Eğitim Takip Asistanı v25.5</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,23 +57,36 @@
         /* POSTER ÖZEL STİLLERİ (Capture Area) */
         .poster-output {
             color: #fff;
-            padding: 28px 16px;
-            background:
-                radial-gradient(1200px 700px at 18% 10%, rgba(255,209,13,.18), transparent 58%),
-                radial-gradient(900px 600px at 82% 18%, rgba(231,230,230,.12), transparent 55%),
-                linear-gradient(180deg, var(--purple), var(--purple2));
+            padding: 32px 24px;
+            position: relative;
+            background: var(--purple); /* Fallback */
+            background: linear-gradient(180deg, var(--purple) 0%, var(--purple2) 100%);
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* Gradyan Efektlerini HTML Elementi Olarak Simüle Etme (html2canvas desteği için) */
+        .poster-bg-effect-1 {
+            position: absolute; top: -10%; left: -10%; width: 60%; height: 60%;
+            background: radial-gradient(circle, rgba(255,209,13,0.3) 0%, transparent 70%);
+            pointer-events: none; z-index: -1;
+        }
+        .poster-bg-effect-2 {
+            position: absolute; bottom: -10%; right: -10%; width: 50%; height: 50%;
+            background: radial-gradient(circle, rgba(231,230,230,0.15) 0%, transparent 70%);
+            pointer-events: none; z-index: -1;
         }
 
         .poster-frame {
             border-radius: var(--r-outer);
             border: 1px solid var(--line-dark);
-            background: rgba(255,255,255,.06);
+            background: rgba(255,255,255,0.1);
             box-shadow: var(--shadow);
             overflow: hidden;
-            backdrop-filter: blur(10px);
+            /* html2canvas backdrop-filter'ı her zaman iyi render edemez, bu yüzden hafif bir bg rengi ekledik */
         }
 
         .poster-header {
@@ -90,26 +103,26 @@
             background: var(--yellow);
             display: grid; place-items: center;
             color: #3B1A8A; font-weight: 950; font-size: 14px;
-            box-shadow: 0 12px 22px rgba(0,0,0,.18);
+            box-shadow: 0 12px 22px rgba(0,0,0,0.18);
             flex: 0 0 auto;
         }
 
         .poster-kicker {
             display: flex; align-items: center; gap: 12px;
             font-weight: 800; font-size: 13px;
-            color: rgba(255,255,255,.78);
+            color: rgba(255,255,255,.85);
             text-transform: uppercase; margin: 10px 0 8px 0;
         }
 
-        .poster-kdot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.40); }
+        .poster-kdot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,.50); }
 
-        .poster-title { margin: 0; font-weight: 950; font-size: 30px; line-height: 1.08; letter-spacing: .2px; }
-        .poster-subtitle { margin: 10px 0 0 0; font-size: 16px; color: rgba(255,255,255,.82); line-height: 1.45; max-width: 720px; }
+        .poster-title { margin: 0; font-weight: 950; font-size: 32px; line-height: 1.08; letter-spacing: .2px; }
+        .poster-subtitle { margin: 10px 0 0 0; font-size: 16px; color: rgba(255,255,255,.90); line-height: 1.45; max-width: 720px; }
 
         .poster-date-pill {
             padding: 14px 18px; border-radius: var(--r-pill);
-            border: 1px solid rgba(255,255,255,.22);
-            background: rgba(255,255,255,.10);
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.15);
             display: flex; align-items: center; gap: 12px;
             box-shadow: var(--shadow-soft); margin-top: 6px;
         }
@@ -119,7 +132,7 @@
 
         .poster-main { padding: 22px 28px 26px 28px; display: grid; grid-template-columns: 1fr; gap: 18px; }
 
-        .poster-card { background: var(--card); color: var(--text); border-radius: var(--r-card); box-shadow: var(--shadow-soft); border: 1px solid rgba(17,24,39,.06); overflow: hidden; }
+        .poster-card { background: var(--card); color: var(--text); border-radius: var(--r-card); box-shadow: var(--shadow-soft); border: 1px solid rgba(17,24,39,0.1); overflow: hidden; }
         .poster-card-head { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(17,24,39,.10); }
         .poster-card-title { margin: 0; font-size: 18px; font-weight: 950; }
         .poster-tag { padding: 8px 12px; border-radius: var(--r-pill); background: rgba(255,209,13,.35); border: 1px solid rgba(255,209,13,.65); font-weight: 900; color: #2B1A67; }
@@ -131,13 +144,13 @@
         .poster-info { padding: 18px 20px 20px 20px; }
         .poster-info h3 { margin: 0 0 10px 0; font-size: 18px; font-weight: 950; }
         .poster-info p { margin: 0 0 14px 0; color: #374151; font-size: 15px; line-height: 1.55; }
-        .poster-pill-link { padding: 14px; border-radius: 16px; background: #F5F6FB; border: 1px solid #E6E7EE; font-weight: 950; color: #2B1A67; text-align: center; word-break: break-all; }
+        .poster-pill-link { padding: 16px; border-radius: 16px; background: #F5F6FB; border: 1px solid #E6E7EE; font-weight: 950; color: #2B1A67; text-align: center; word-break: break-all; }
 
         .poster-footer { padding: 0 28px 28px 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-        .poster-glass-box { border-radius: 22px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.10); padding: 18px 20px; }
+        .poster-glass-box { border-radius: 22px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,0.12); padding: 18px 20px; }
         .poster-glass-box h4 { margin: 0 0 10px 0; font-size: 18px; font-weight: 950; }
-        .poster-glass-box ul { margin: 0; padding-left: 18px; color: rgba(255,255,255,.88); line-height: 1.7; font-size: 15px; }
-        .poster-glass-box code { background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.14); padding: 2px 8px; border-radius: 10px; font-weight: 950; }
+        .poster-glass-box ul { margin: 0; padding-left: 18px; color: rgba(255,255,255,.95); line-height: 1.7; font-size: 15px; }
+        .poster-glass-box code { background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.14); padding: 2px 8px; border-radius: 10px; font-weight: 950; }
 
         @media (max-width: 820px) {
             .poster-header { flex-direction: column; align-items: flex-start; }
@@ -298,27 +311,36 @@
                 if (!listRefs.current[whName]) return;
                 const el = listRefs.current[whName];
                 
-                // ORANLARI VE TASARIMI KORUMAK İÇİN ÇÖZÜM:
-                // Çekim anında tüm geçici stilleri ve genişliği zorla (Desktop Standardı)
+                // --- ORANLARI VE EFEKTLERİ KORUMA STRATEJİSİ ---
                 const originalStyle = el.getAttribute('style');
-                const frame = el.querySelector('.poster-frame');
-                const originalFrameStyle = frame ? frame.getAttribute('style') : '';
-
+                
+                // html2canvas gradyanları tam olarak işleyemediği için stil desteğini simüle ediyoruz
                 el.style.width = "900px";
                 el.style.minWidth = "900px";
+                el.style.backgroundColor = "#5D3EBC"; // Ana renk garantisi
+                el.style.backgroundImage = "linear-gradient(180deg, #5D3EBC 0%, #734696 100%)";
+                
+                const frame = el.querySelector('.poster-frame');
                 if(frame) {
-                    frame.style.backdropFilter = "none"; // Canvas desteği yok, bozuyor
-                    frame.style.background = "rgba(255,255,255,0.15)"; // Daha belirgin solid renk
+                    frame.style.backdropFilter = "none"; 
+                    frame.style.background = "rgba(255, 255, 255, 0.15)";
+                    frame.style.border = "1px solid rgba(255,255,255,0.4)";
                 }
 
                 try {
+                    // Render için kısa bir bekletme
+                    await new Promise(r => setTimeout(r, 100));
+
                     const canvas = await html2canvas(el, { 
                         scale: 2, 
                         useCORS: true,
                         logging: false,
                         windowWidth: 1200,
-                        backgroundColor: "#5D3EBC"
+                        backgroundColor: null,
+                        imageTimeout: 0,
+                        removeContainer: true
                     });
+                    
                     const link = document.createElement('a');
                     link.download = `${whName} - ${new Date().toLocaleDateString('tr-TR')}.png`;
                     link.href = canvas.toDataURL('image/png');
@@ -326,9 +348,8 @@
                 } catch(e) {
                     console.error("Canvas hatası:", e);
                 } finally {
-                    // Stilleri eski haline getir
                     el.setAttribute('style', originalStyle || '');
-                    if(frame) frame.setAttribute('style', originalFrameStyle || '');
+                    if(frame) frame.style.backdropFilter = "";
                 }
             };
 
@@ -337,7 +358,7 @@
                 const keys = Object.keys(processedData);
                 for (const key of keys) {
                    await handleDownloadSingle(key);
-                   await new Promise(r => setTimeout(r, 600));
+                   await new Promise(r => setTimeout(r, 800));
                 }
                 setDownloadingAll(false);
             };
@@ -352,7 +373,7 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v25.4
+                                Eğitim Takip Asistanı v25.5
                             </h1>
                         </div>
 
@@ -361,7 +382,6 @@
                             <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500'}`}>Öğretici Sohbetler</button>
                         </div>
 
-                        {/* AYARLAR BUTONU */}
                         <div className="flex justify-end">
                             <div className="relative">
                                 <button className="text-xs bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-1 shadow-sm transition-all">
@@ -394,13 +414,11 @@
                             const currentData = activeTab === 'orientation' ? data.orientation : data.chat;
                             const isExpanded = expandedWarehouses[whName];
 
-                            // Tamamlanma Oranı Hesaplama
                             const totalCount = data.total;
                             const incompleteCount = currentData.incomplete.length;
                             const completedCount = totalCount - incompleteCount;
                             const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-                            // Oran Renkleri
                             let rateColor = "text-red-600";
                             if (completionRate > 20 && completionRate <= 50) rateColor = "text-orange-500";
                             else if (completionRate > 50 && completionRate <= 80) rateColor = "text-blue-600";
@@ -428,11 +446,15 @@
 
                                     {isExpanded && (
                                         <div className="border-t bg-slate-50/50 p-4">
+                                            {/* POSTER ALANI */}
                                             <div ref={el => listRefs.current[whName] = el} className="poster-output">
+                                                <div className="poster-bg-effect-1"></div>
+                                                <div className="poster-bg-effect-2"></div>
+                                                
                                                 <div className="poster-frame">
                                                     <header className="poster-header">
                                                         <div className="brand">
-                                                            <div className="poster-logo font-getir tracking-tighter">getir</div>
+                                                            <div className="poster-logo font-getir">getir</div>
                                                             <div className="brandText">
                                                                 <div className="poster-kicker">
                                                                     <span className="poster-kdot"></span> {whName} <span className="poster-kdot"></span> {activeTab === 'orientation' ? 'ORYANTASYON' : 'ÖĞRETİCİ SOHBETLER'}
@@ -467,7 +489,7 @@
 
                                                         <aside className="poster-card">
                                                             <div className="poster-info">
-                                                                <h3>Video</h3>
+                                                                <h3>Video Bilgi</h3>
                                                                 <p>“{activeTab === 'orientation' ? 'Oryantasyon' : (chatSettings.name || 'Eğitim Adı')}” eğitim videosuna aşağıdaki bağlantıdan erişebilirsiniz.</p>
                                                                 <div className="poster-pill-link">
                                                                     {activeTab === 'orientation' ? 'getirup.com/eep/activity/3740' : `getirup.com/eep/activity/${chatSettings.id || 'ID'}`}
