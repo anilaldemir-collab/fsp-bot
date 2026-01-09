@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v24.7</title>
+    <title>Eğitim Takip Asistanı v24.8</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,19 +28,147 @@
     </script>
 
     <style>
+        :root {
+            /* Taslak Renk Paleti */
+            --slate-1: #44546A;
+            --gray-1: #E7E6E6;
+            --purple: #5D3EBC;
+            --purple-2: #734696;
+            --yellow: #FFD10D;
+            --orange: #F29B26;
+            --bg: var(--purple);
+            --bg2: var(--purple-2);
+            --card: #FFFFFF;
+            --text: #111827;
+            --subtext: #4B5563;
+            --line-on-dark: rgba(255, 255, 255, .18);
+            --line: #E5E7EB;
+            --radius-xl: 26px;
+            --radius: 18px;
+            --shadow: 0 14px 40px rgba(0, 0, 0, .22);
+            --shadow-soft: 0 10px 24px rgba(0, 0, 0, .12);
+        }
+
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        button, input[type="file"], select, input[type="text"] { touch-action: manipulation; }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
-        .animate-scale-in { animation: scaleIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
         
-        /* Özel Font Sınıfı - Jihosoft Bold talebi eklendi */
+        /* Özel Font Sınıfı */
         .font-getir { font-family: 'jihosoft', 'Varela Round', sans-serif; letter-spacing: -3px; font-weight: 800; }
+
+        /* Taslak Spesifik Stiller */
+        .poster-container {
+            color: #fff;
+            padding: 28px 16px;
+            background: radial-gradient(1100px 650px at 18% 10%, rgba(255, 209, 13, .22), transparent 55%),
+                        radial-gradient(900px 600px at 80% 20%, rgba(231, 230, 230, .14), transparent 55%),
+                        linear-gradient(180deg, var(--bg), var(--bg2));
+        }
+
+        .poster-main {
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--line-on-dark);
+            background: rgba(255, 255, 255, .05);
+            backdrop-filter: blur(8px);
+        }
+
+        .poster-header {
+            padding: 22px 22px 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            border-bottom: 1px solid var(--line-on-dark);
+        }
+
+        .poster-logo {
+            width: 56px; height: 56px; border-radius: 999px;
+            background: var(--yellow);
+            display: grid; place-items: center;
+            color: #3B1A8A;
+            font-weight: 900; font-size: 14px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, .18);
+        }
+
+        .poster-kicker {
+            display: flex; align-items: center; gap: 10px;
+            color: rgba(255, 255, 255, .80);
+            font-weight: 700; font-size: 12px;
+            text-transform: uppercase; margin-bottom: 6px;
+        }
+
+        .poster-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .45); }
+        .poster-title { margin: 0; font-size: 22px; font-weight: 900; line-height: 1.18; }
+        .poster-subtitle { margin: 8px 0 0 0; font-size: 14px; color: rgba(255, 255, 255, .80); }
+
+        .poster-date-badge {
+            padding: 10px 14px; border-radius: 999px;
+            background: rgba(255, 255, 255, .10);
+            border: 1px solid rgba(255, 255, 255, .18);
+            font-weight: 900; display: flex; align-items: center; gap: 10px;
+        }
+
+        .poster-pill { width: 10px; height: 10px; border-radius: 999px; background: var(--yellow); }
+
+        .poster-content {
+            padding: 18px 22px 22px 22px;
+            display: grid; grid-template-columns: 1.25fr .75fr; gap: 18px;
+        }
+
+        .poster-card {
+            background: var(--card); color: var(--text);
+            border-radius: var(--radius); box-shadow: var(--shadow-soft);
+            overflow: hidden; border: 1px solid rgba(17, 24, 39, .06);
+        }
+
+        .poster-card-head {
+            padding: 16px 16px 12px 16px; border-bottom: 1px solid var(--line);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .poster-chip {
+            font-size: 12px; font-weight: 900; color: #2B1A67;
+            background: rgba(255, 209, 13, .35); border: 1px solid rgba(255, 209, 13, .65);
+            padding: 6px 10px; border-radius: 999px;
+        }
+
+        .poster-list { list-style: none; padding: 8px 0; margin: 0; }
+        .poster-list li { padding: 12px 16px; border-top: 1px solid #F1F2F4; display: flex; justify-content: center; }
+        .poster-list li:first-child { border-top: 0; }
+        .poster-name { font-weight: 800; color: #111827; }
+
+        .poster-info { padding: 16px; }
+        .poster-info h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: 900; }
+        .poster-info p { margin: 0 0 10px 0; color: #374151; font-size: 13px; line-height: 1.55; }
+
+        .poster-link-box {
+            padding: 12px; border-radius: 14px; background: #F7F7FB;
+            border: 1px solid #E5E7EB; margin-top: 10px;
+            font-weight: 900; font-size: 13px; color: #2B1A67; text-align: center;
+            word-break: break-all;
+        }
+
+        .poster-footer {
+            padding: 18px 22px 22px 22px; border-top: 1px solid var(--line-on-dark);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+        }
+
+        .poster-foot-card {
+            background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: var(--radius); padding: 14px;
+        }
+
+        .poster-foot-card h4 { margin: 0 0 8px 0; font-size: 13px; font-weight: 950; }
+        .poster-foot-card ul { margin: 0; padding-left: 18px; font-size: 13px; color: rgba(255, 255, 255, .88); line-height: 1.65; }
+        .poster-foot-card code { background: rgba(0, 0, 0, .18); padding: 2px 6px; border-radius: 8px; font-weight: 900; }
+
+        @media (max-width: 820px) {
+            .poster-header { flex-direction: column; align-items: flex-start; }
+            .poster-content, .poster-footer { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -50,24 +178,15 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ (INLINE SVG) ---
-
-        // 1. Getir Yazı Logosu (Sarı)
+        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ ---
         const GetirTextLogo = () => (
             <div className="font-getir tracking-tighter" 
-                 style={{ 
-                     color: '#ffd10d', 
-                     fontSize: '80px', 
-                     lineHeight: '1', 
-                     textAlign: 'center', 
-                     width: '100%',
-                     textShadow: '2px 2px 4px rgba(0,0,0,0.1)' 
-                 }}>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Getir_logo.png/120px-Getir_logo.png"/>
+                 style={{ color: '#ffd10d', fontSize: '80px', lineHeight: '1', textAlign: 'center', width: '100%', textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
+                getir
             </div>
         );
 
-        // --- İKONLAR (Lucide) ---
+        // --- İKONLAR ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -89,7 +208,7 @@
         const Copy = (props) => <IconBase {...props}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></IconBase>;
         const MessageSquare = (props) => <IconBase {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></IconBase>;
         const ClipboardPaste = (props) => <IconBase {...props}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></IconBase>;
-        const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
+        const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const PhoneIcon = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
         const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
@@ -340,59 +459,9 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
             const createScreenshot = async (whName) => {
                 if (!listRefs.current[whName]) return null;
                 const el = listRefs.current[whName];
-                const originalBg = el.style.backgroundColor;
-                const originalColor = el.style.color;
-                const originalPadding = el.style.padding;
-                const originalBorderRadius = el.style.borderRadius;
                 
-                const icons = el.querySelectorAll('.hide-on-capture');
-                icons.forEach(i => i.style.display = 'none');
-                
-                const captureElements = el.querySelectorAll('.show-on-capture');
-                captureElements.forEach(b => b.style.display = 'block');
-
-                const links = el.querySelectorAll('li > a');
-                links.forEach(a => a.style.display = 'none');
-
-                el.style.backgroundColor = "#5d3ebc"; 
-                el.style.color = "#ffd10d"; 
-                el.style.padding = "60px 30px 30px 30px";
-                el.style.borderRadius = "0px";
-                el.style.position = "relative"; 
-                
-                const listItems = el.querySelectorAll('li');
-                listItems.forEach(li => {
-                    li.style.backgroundColor = "white";
-                    li.style.color = "#44546a"; 
-                    li.style.fontWeight = "bold";
-                    li.style.border = "2px solid #f29b26"; 
-                    li.style.marginBottom = "8px";
-                    li.style.borderRadius = "8px";
-                    li.style.padding = "10px 15px";
-                    li.style.justifyContent = "center"; 
-                    li.style.textAlign = "center";
-                });
-                
-                const headers = el.querySelectorAll('h4, h5, p, span, div');
-                headers.forEach(h => {
-                    if(!h.closest('li')) { 
-                        h.style.color = "#ffd10d"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd10d";
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd10d";
-                        if(h.classList.contains('text-purple-700')) h.style.color = "#ffd10d";
-                    } else {
-                         h.style.color = "#44546a";
-                    }
-                    
-                    if (h.classList.contains('date-label')) {
-                        h.style.fontSize = '24px'; 
-                        h.style.fontWeight = '900'; 
-                        h.style.textAlign = 'center';
-                        h.style.width = '100%';
-                    }
-                });
-
-                await new Promise(r => setTimeout(r, 200));
+                // Screenshot öncesi geçici stil düzenlemeleri (Eğer React render dışında bir şey gerekiyorsa)
+                // html2canvas capture işlemi
 
                 try {
                     const canvas = await window.html2canvas(el, { 
@@ -406,36 +475,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                     console.error("Canvas hatası:", e);
                     setHasError(true);
                     return null;
-                } finally {
-                    el.style.backgroundColor = originalBg;
-                    el.style.color = originalColor;
-                    el.style.padding = originalPadding;
-                    el.style.borderRadius = originalBorderRadius;
-                    
-                    icons.forEach(i => i.style.display = '');
-                    captureElements.forEach(b => b.style.display = 'none');
-                    links.forEach(a => a.style.display = ''); 
-
-                    listItems.forEach(li => {
-                        li.style.backgroundColor = ""; 
-                        li.style.color = "";
-                        li.style.fontWeight = "";
-                        li.style.border = "";
-                        li.style.marginBottom = "";
-                        li.style.borderRadius = "";
-                        li.style.padding = "";
-                        li.style.justifyContent = "";
-                        li.style.textAlign = "";
-                    });
-
-                    headers.forEach(h => {
-                        h.style.color = "";
-                        if (h.classList.contains('date-label')) {
-                             h.style.fontSize = "";
-                             h.style.fontWeight = "";
-                             h.style.textAlign = "";
-                        }
-                    });
                 }
             };
 
@@ -452,6 +491,26 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 link.download = getFileName(whName);
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+            };
+
+            const handleShareImage = async (whName) => {
+                const canvas = await createScreenshot(whName);
+                if (!canvas) return;
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], getFileName(whName), { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try { await navigator.share({ files: [file] }); } catch (e) {}
+                    } else {
+                         try {
+                            const item = new ClipboardItem({ 'image/png': blob });
+                            await navigator.clipboard.write([item]);
+                            if (confirm("Görsel panoya kopyalandı! WhatsApp Web açılsın mı?")) window.open("https://web.whatsapp.com", "_blank");
+                        } catch (err) {
+                            alert("Otomatik kopyalama yapılamadı. Görsel indiriliyor.");
+                            handleDownloadSingle(whName);
+                        }
+                    }
+                }, 'image/png');
             };
 
             const downloadAll = async () => {
@@ -473,18 +532,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
             };
 
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
-
-            if (hasError) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center bg-red-50 p-4 text-center">
-                        <div>
-                            <h1 className="text-2xl font-bold text-red-600 mb-2">Bir Hata Oluştu!</h1>
-                            <p className="text-slate-600 mb-4">Görsel oluşturulurken bir sorun çıktı. Sayfayı yenileyip tekrar deneyin.</p>
-                            <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-6 py-2 rounded-lg">Yenile</button>
-                        </div>
-                    </div>
-                );
-            }
+            const currentDate = new Date().toLocaleDateString('tr-TR');
 
             return (
                 <div className="min-h-screen bg-slate-50 p-4 font-sans text-slate-800 pb-24">
@@ -493,7 +541,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v24.7
+                                Eğitim Takip Asistanı v24.8
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -598,8 +646,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 {Object.entries(processedData).map(([whName, data]) => {
                                     const currentData = activeTab === 'orientation' ? data.orientation : data.chat;
                                     const expanded = expandedWarehouses[whName];
-                                    const theme = activeTab === 'orientation' ? 'text-blue-700 bg-blue-50' : 'text-purple-700 bg-purple-50';
-                                    
                                     const total = data.total;
                                     const incompleteCount = currentData.incomplete.length;
                                     const completedCount = total - incompleteCount;
@@ -614,7 +660,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                         <div key={whName} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                                             <div onClick={() => toggleWarehouse(whName)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`p-2 rounded-lg ${theme}`}><Filter size={18} /></div>
+                                                    <div className={`p-2 rounded-lg ${activeTab === 'orientation' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}><Filter size={18} /></div>
                                                     <div>
                                                         <h3 className="font-bold text-slate-800 text-sm md:text-base">{whName}</h3>
                                                         <p className="text-xs text-slate-500">Eksik: <span className="font-bold text-red-600">{incompleteCount}</span> / {total}</p>
@@ -631,75 +677,94 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
 
                                             {expanded && (
                                                 <div className="border-t border-slate-100 bg-slate-50/50 p-4">
-                                                    {/* Capture Area */}
-                                                    <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4 relative overflow-hidden">
-                                                        <div className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-32 z-20">
-                                                            <GetirTextLogo />
-                                                        </div>
-                                                        
-                                                        {activeTab === 'orientation' ? (
-                                                            <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
-                                                                <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500 date-label">{new Date().toLocaleDateString('tr-TR')}</span></div>
-                                                                <h5 className={`font-semibold text-sm flex items-center gap-2 text-blue-700`}><XCircle size={16} className="text-red-500"/> Oryantasyon Eğitimi</h5>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12 text-center">
-                                                                <h4 className="font-bold text-lg text-slate-800 mb-1">{whName} Öğretici Sohbetler</h4>
-                                                                <h5 className="font-bold text-xl text-purple-700 uppercase mb-1">ÖĞRETİCİ SOHBETLER EĞİTİMİ</h5>
-                                                                <p className="text-sm text-slate-600 font-medium mb-2">{currentMonth} ayı içeriği: <span className="text-purple-600">"{chatSettings.name || 'Eğitim Adı'}"</span> videosu yayında</p>
-                                                                <div className="text-xs text-slate-500 date-label font-bold uppercase tracking-widest">{new Date().toLocaleDateString('tr-TR')}</div>
-                                                            </div>
-                                                        )}
-
-                                                        <ul className="space-y-2 relative z-10">
-                                                            {currentData.incomplete.map((c, i) => (
-                                                                <li key={i} className="text-sm text-slate-700 bg-red-50 p-2 md:p-3 rounded flex justify-between items-center border border-red-100">
-                                                                    <div className="flex items-center gap-2 w-full justify-center">
-                                                                        <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
-                                                                        {c.isBlank && <div className="tooltip-container relative hide-on-capture"><AlertTriangle size={14} className="text-amber-500 cursor-help" /><div className="tooltip-text invisible absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-50 text-center">Entegrasyonu tamamlanmamış kurye olabilir dikkat!</div></div>}
+                                                    
+                                                    {/* TASLAK GÖRSEL ALANI (Capture Area) */}
+                                                    <div ref={el => listRefs.current[whName] = el} className="poster-container mx-auto max-w-4xl">
+                                                        <div className="poster-main">
+                                                            {/* HEADER */}
+                                                            <div className="poster-header">
+                                                                <div className="brand">
+                                                                    <div className="poster-logo">getir</div>
+                                                                    <div className="brandText">
+                                                                        <div className="poster-kicker">
+                                                                            <span className="poster-dot"></span> {whName} <span className="poster-dot"></span> {activeTab === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbetler'}
+                                                                        </div>
+                                                                        <h1 className="poster-title uppercase">{activeTab === 'orientation' ? 'Oryantasyon Eğitimi' : 'Öğretici Sohbetler Eğitimi'}</h1>
+                                                                        <p className="poster-subtitle">
+                                                                            {activeTab === 'chat' 
+                                                                                ? `${currentMonth} ayı içeriği: “${chatSettings.name || 'Eğitim Adı'}” videosu yayında.`
+                                                                                : `Oryantasyon eğitimi eksik kurye listesi güncellendi.`}
+                                                                        </p>
                                                                     </div>
-                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline ml-auto"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
-                                                                </li>
-                                                            ))}
-                                                            {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
-                                                        </ul>
-
-                                                        {activeTab === 'chat' && (
-                                                            <div className="mt-6 pt-4 border-t-2 border-slate-100 text-xs text-slate-700 leading-relaxed relative z-10">
-                                                                <p className="font-bold text-sm text-slate-800 mb-2 border-b border-slate-200 pb-1">Video</p>
-                                                                <p className="mb-2 italic">
-                                                                    “{chatSettings.name || 'eğitim adı'}” eğitim videosuna aşağıdaki bağlantıdan erişebilirsiniz.
-                                                                </p>
-                                                                <p className="mb-4 text-blue-600 font-mono break-all font-bold underline">
-                                                                    https://www.getirup.com/getirup/eep/main/activity/{chatSettings.id || 'Eğitim ID'}
-                                                                </p>
-                                                                
-                                                                <p className="font-bold text-slate-800 mb-1 border-b border-slate-200 pb-1 uppercase tracking-wider">Giriş Yöntemleri</p>
-                                                                <div className="space-y-2 mb-4">
-                                                                    <p className="flex items-start gap-2">
-                                                                        <span>📎</span>
-                                                                        <span><strong>E.Mobil uygulaması</strong> telefonda yüklü olmalı. MDU’ya giriş yapın → Profil bölümünden <strong>Getirup’ı</strong> seçin. Şifresiz giriş kullanabilirsiniz.</span>
-                                                                    </p>
                                                                 </div>
-
-                                                                <p className="font-bold text-slate-800 mb-1 border-b border-slate-200 pb-1 uppercase tracking-wider">Alternatif Giriş</p>
-                                                                <div className="space-y-2">
-                                                                    <p className="flex items-start gap-2">
-                                                                        <span>📎</span>
-                                                                        <span>
-                                                                            <strong>E.Mobil uygulamasına</strong> giriş yaparak erişebilirsiniz.<br/>
-                                                                            <span className="font-semibold text-purple-700">Kurum Kodu:</span> GETIRUP<br/>
-                                                                            <span className="font-semibold text-purple-700">Kullanıcı adı:</span> Telefon numaranız (başında 0 olmadan) “Parolamı unuttum” ile yeni parola oluşturabilirsiniz.
-                                                                        </span>
-                                                                    </p>
+                                                                <div className="poster-date-badge">
+                                                                    <span className="poster-pill"></span>
+                                                                    <span>{currentDate}</span>
                                                                 </div>
                                                             </div>
-                                                        )}
+
+                                                            {/* CONTENT */}
+                                                            <div className="poster-content">
+                                                                <section className="poster-card">
+                                                                    <div className="poster-card-head">
+                                                                        <h2 className="poster-card-title">Katılımcılar</h2>
+                                                                        <span className="poster-chip">{whName}</span>
+                                                                    </div>
+                                                                    <ul className="poster-list">
+                                                                        {currentData.incomplete.map((c, i) => (
+                                                                            <li key={i}><span className="poster-name">{c['Courier Name']}</span></li>
+                                                                        ))}
+                                                                        {currentData.incomplete.length === 0 && (
+                                                                            <li><span className="text-green-600 font-bold">Harika! Herkes tamamladı 🎉</span></li>
+                                                                        )}
+                                                                    </ul>
+                                                                </section>
+
+                                                                <aside className="poster-card">
+                                                                    <div className="poster-info">
+                                                                        <h3>{activeTab === 'orientation' ? 'Bilgi' : 'Video'}</h3>
+                                                                        <p>
+                                                                            {activeTab === 'orientation' 
+                                                                                ? 'Oryantasyon eğitimi linkine aşağıdan erişebilirsiniz.'
+                                                                                : `“${chatSettings.name || 'Eğitim adı'}” eğitim videosuna aşağıdaki bağlantıdan erişebilirsiniz.`}
+                                                                        </p>
+                                                                        <div className="poster-link-box">
+                                                                            {activeTab === 'orientation' 
+                                                                                ? 'getirup.com/eep/activity/3740'
+                                                                                : `getirup.com/eep/activity/${chatSettings.id || 'ID'}`}
+                                                                        </div>
+                                                                    </div>
+                                                                </aside>
+                                                            </div>
+
+                                                            {/* FOOTER */}
+                                                            <div className="poster-footer">
+                                                                <div className="poster-foot-card">
+                                                                    <h4>Giriş Yöntemleri</h4>
+                                                                    <ul>
+                                                                        <li><strong>E.Mobil</strong> uygulaması telefonda yüklü olmalı.</li>
+                                                                        <li>MDU’ya giriş yapın → Profil bölümünden <strong>Getirup</strong>’ı seçin.</li>
+                                                                        <li>Şifresiz giriş kullanabilirsiniz.</li>
+                                                                    </ul>
+                                                                </div>
+                                                                <div className="poster-foot-card">
+                                                                    <h4>Alternatif Giriş</h4>
+                                                                    <ul>
+                                                                        <li>E.Mobil uygulamasına giriş yaparak erişebilirsiniz.</li>
+                                                                        <li>Kurum Kodu: <code>GETIRUP</code></li>
+                                                                        <li>Kullanıcı adı: Telefon numaranız (başında 0)</li>
+                                                                        <li>“Parolamı unuttum” ile yeni parola.</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     
-                                                    <div className="flex justify-center gap-2 flex-wrap">
-                                                        <button onClick={() => handleShareText(whName)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-green-600 transition-colors"><MessageSquare size={16}/> {targetPhone ? 'Kişiye Gönder' : 'WhatsApp Listesi'}</button>
-                                                        <button onClick={() => handleShareImage(whName)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-blue-700 transition-colors"><Copy size={16}/> <span className="hidden sm:inline">Görsel Kopyala</span><span className="sm:hidden">Görsel</span></button>
+                                                    {/* Action Buttons */}
+                                                    <div className="mt-4 flex justify-center gap-2 flex-wrap">
+                                                        <button onClick={() => handleShareImage(whName)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-blue-700 transition-colors">
+                                                            <Copy size={16}/> <span>Görsel Kopyala / Paylaş</span>
+                                                        </button>
                                                         <button onClick={() => handleDownloadSingle(whName)} className="bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><Download size={16}/></button>
                                                     </div>
                                                 </div>
@@ -710,7 +775,9 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 
                                 <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-50">
                                     <div className="bg-white p-2 rounded-full shadow-lg border pointer-events-auto">
-                                        <button onClick={downloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-md">{downloadingAll ? <Loader className="animate-spin"/> : <Layers size={20}/>} Tümünü İndir</button>
+                                        <button onClick={downloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-md">
+                                            {downloadingAll ? <Loader className="animate-spin"/> : <Layers size={20}/>} Tümünü İndir
+                                        </button>
                                     </div>
                                 </div>
                             </div>
