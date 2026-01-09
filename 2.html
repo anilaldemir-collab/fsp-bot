@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v24 (Logolu ve Kuryeli)</title>
+    <title>Eğitim Takip Asistanı v24.6</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +18,9 @@
     <!-- Kütüphaneler -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Font (Getir Fontuna Benzer) -->
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
 
     <!-- AYARLAR -->
     <script>
@@ -35,6 +38,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+        
+        /* Özel Font Sınıfı - Jihosoft Bold talebi eklendi */
+        .font-getir { font-family: 'jihosoft', 'Varela Round', sans-serif; letter-spacing: -3px; font-weight: 800; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -44,13 +50,31 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
-        // --- İKONLAR ---
+        // --- GÜVENLİ GÖRSEL BİLEŞENLERİ (INLINE SVG) ---
+
+        // 1. Getir Yazı Logosu (Sarı)
+        const GetirTextLogo = () => (
+            <div className="font-getir tracking-tighter" 
+                 style={{ 
+                     color: '#ffd10d', 
+                     fontSize: '80px', 
+                     lineHeight: '1', 
+                     textAlign: 'center', 
+                     width: '100%',
+                     textShadow: '2px 2px 4px rgba(0,0,0,0.1)' 
+                 }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Getir_logo.png/120px-Getir_logo.png"/>
+            </div>
+        );
+
+        // --- İKONLAR (Lucide) ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
             </svg>
         );
         const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></IconBase>;
+        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
         const FileText = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
         const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconBase>;
         const Search = (props) => <IconBase {...props}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconBase>;
@@ -68,7 +92,6 @@
         const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconBase>;
         const PhoneIcon = (props) => <IconBase {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconBase>;
         const AlertTriangle = (props) => <IconBase {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></IconBase>;
-        const FileUp = (props) => <IconBase {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></IconBase>;
         const Check = (props) => <IconBase {...props}><polyline points="20 6 9 17 4 12"/></IconBase>;
 
         const App = () => {
@@ -86,35 +109,23 @@
             const [allHeaders, setAllHeaders] = useState([]);
             const [targetPhone, setTargetPhone] = useState('');
             const [isAutoLoaded, setIsAutoLoaded] = useState(false);
+            const [hasError, setHasError] = useState(false);
             
             // --- EĞİTİM BİLGİLERİ ---
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
-
-            const [colMap, setColMap] = useState({
-                sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: ''
-            });
-
+            const [colMap, setColMap] = useState({ sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: '' });
             const listRefs = useRef({});
 
-            // 1. BAŞLANGIÇTA OTOMATİK VERİ ÇEKME (id.txt)
             useEffect(() => {
                 const savedPhone = localStorage.getItem('targetPhone');
                 if (savedPhone) setTargetPhone(savedPhone);
-                
                 const savedChat = localStorage.getItem('chatSettings');
                 if (savedChat) setChatSettings(JSON.parse(savedChat));
-
-                // Otomatik olarak id.txt'yi kontrol et
+                
                 fetch('id.txt')
-                    .then(res => {
-                        if(res.ok) return res.text();
-                        throw new Error('Dosya yok');
-                    })
-                    .then(text => {
-                        parseIdContent(text, true); // true = sessiz mod (alert yok)
-                    })
-                    .catch(err => console.log("Otomatik id.txt bulunamadı, manuel mod aktif."));
-
+                    .then(res => { if(res.ok) return res.text(); throw new Error('Dosya yok'); })
+                    .then(text => { parseIdContent(text, true); })
+                    .catch(err => console.log("Otomatik id.txt bulunamadı"));
             }, []);
 
             const saveTargetPhone = (e) => {
@@ -125,29 +136,21 @@
 
             const parseIdContent = (text, isAuto = false) => {
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-                let foundId = '';
-                let foundName = '';
-
-                // Strateji 1: Etiketli okuma
+                let foundId = '', foundName = '';
                 lines.forEach(line => {
                     const lower = line.toLowerCase();
-                    if (lower.startsWith('id:') || lower.startsWith('id=')) { foundId = line.split(/[:=]/)[1].trim(); }
-                    else if (lower.startsWith('isim:') || lower.startsWith('name:') || lower.startsWith('ad:')) { foundName = line.split(/[:=]/)[1].trim(); }
+                    if (lower.startsWith('id:') || lower.startsWith('id=')) foundId = line.split(/[:=]/)[1].trim();
+                    else if (lower.startsWith('isim:') || lower.startsWith('name:')) foundName = line.split(/[:=]/)[1].trim();
                 });
-
-                // Strateji 2: Sıralı okuma
                 if (!foundId && !foundName && lines.length >= 2) { foundId = lines[0]; foundName = lines[1]; }
-                else if (!foundId && lines.length > 0 && /^\d+$/.test(lines[0])) foundId = lines[0];
-
+                
                 if (foundId || foundName) {
                     const newSettings = { id: foundId, name: foundName };
                     setChatSettings(newSettings);
                     localStorage.setItem('chatSettings', JSON.stringify(newSettings));
                     if (isAuto) setIsAutoLoaded(true);
-                    if (!isAuto) alert(`✅ Bilgiler Yüklendi!\n\nID: ${foundId}\nİsim: ${foundName}`);
-                } else if (!isAuto) {
-                    alert("Dosyadan veri okunamadı.");
-                }
+                    if (!isAuto) alert(`✅ Bilgiler Yüklendi!\nID: ${foundId}\nİsim: ${foundName}`);
+                } else if (!isAuto) alert("Veri okunamadı.");
             };
 
             const handleIdFile = (e) => {
@@ -159,7 +162,6 @@
                 e.target.value = null; 
             };
 
-            // --- DOSYA İŞLEME MANTIĞI ---
             const findHeaderRowIndex = (dataArray) => {
                 let bestIndex = 0, maxScore = 0;
                 for (let i = 0; i < Math.min(dataArray.length, 50); i++) {
@@ -170,8 +172,7 @@
                     if (rowStr.includes('sy') || rowStr.includes('yönetici')) score += 5;
                     if (rowStr.includes('sgs') || rowStr.includes('sorumlu')) score += 5;
                     if (rowStr.includes('warehouse') || rowStr.includes('depo')) score += 4;
-                    if (rowStr.includes('courier') || rowStr.includes('kurye')) score += 3;
-                    if (rowStr.includes('saved by') || rowStr.includes('from:') || rowStr.includes('generated')) score -= 20;
+                    if (rowStr.includes('courier')) score += 3;
                     if (score > maxScore) { maxScore = score; bestIndex = i; }
                 }
                 return bestIndex; 
@@ -186,16 +187,15 @@
                     }
                     return '';
                 };
-                const newMap = {
-                    sy: find(['sy', 'saha yöneticisi', 'yönetici']),
-                    sgs: find(['sgs', 'saha sorumlusu', 'sorumlu']),
+                setColMap({
+                    sy: find(['sy', 'saha yöneticisi']),
+                    sgs: find(['sgs', 'saha sorumlusu']),
                     warehouse: find(['warehouse', 'depo']),
-                    orientation: find(['oryantasyon', 'orientation']),
-                    chat: find(['öğretici sohbetler', 'sohbet', 'chat']),
-                    name: find(['courier name', 'kurye adı', 'ad soyad', 'isim']),
-                    phone: find(['courier gsm', 'telefon', 'gsm'])
-                };
-                setColMap(newMap);
+                    orientation: find(['oryantasyon']),
+                    chat: find(['öğretici sohbetler', 'sohbet']),
+                    name: find(['courier name', 'kurye adı']),
+                    phone: find(['courier gsm', 'telefon'])
+                });
             };
 
             const updateManagerList = (data, mapping) => {
@@ -205,10 +205,7 @@
                     [mapping.sy, mapping.sgs].forEach(key => {
                         if (key && row[key]) {
                             const val = String(row[key]).trim();
-                            const lowerVal = val.toLowerCase();
-                            if (val.length > 2 && val.length < 200 && !lowerVal.includes('saved by') && !lowerVal.includes('from:') && !lowerVal.includes('sidebar') && !lowerVal.includes('http') && !lowerVal.includes(':')) {
-                                managers.add(val);
-                            }
+                            if (val.length > 2 && val.length < 50 && !val.toLowerCase().includes('saved by')) managers.add(val);
                         }
                     });
                 });
@@ -220,7 +217,7 @@
             const processRawDataArray = (rawData) => {
                 try {
                     const headerIdx = findHeaderRowIndex(rawData);
-                    const headers = rawData[headerIdx].map(h => h ? String(h).trim() : `Sütun ${Math.random().toString().substr(2,4)}`);
+                    const headers = rawData[headerIdx].map(h => h ? String(h).trim() : `Sütun`);
                     setAllHeaders(headers);
                     const cleanData = [];
                     for (let i = headerIdx + 1; i < rawData.length; i++) {
@@ -233,7 +230,7 @@
                     setCsvData(cleanData);
                     autoMapColumns(headers); 
                     setLoading(false);
-                } catch (e) { alert("Veri işleme hatası: " + e.message); setLoading(false); }
+                } catch (e) { alert("Veri hatası."); setLoading(false); }
             };
 
             const handleFileUpload = (event) => {
@@ -244,11 +241,9 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = window.XLSX.read(data, { type: 'array' });
+                        const workbook = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         let sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('rapor')) || workbook.SheetNames[0];
-                        const rawData = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
-                        processRawDataArray(rawData);
+                        processRawDataArray(window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 }));
                     } catch (err) { alert("Dosya okunamadı."); setLoading(false); }
                 };
                 reader.readAsArrayBuffer(file);
@@ -266,7 +261,6 @@
                 }, 100);
             };
 
-            // --- VERİ FİLTRELEME ---
             const processedData = useMemo(() => {
                 if (!csvData.length || !searchName) return null;
                 const lowerSearch = searchName.toLocaleLowerCase('tr');
@@ -281,25 +275,21 @@
                     if (!grouped[wh]) grouped[wh] = { total: 0, orientation: { incomplete: [] }, chat: { incomplete: [] } };
                     grouped[wh].total += 1;
                     
-                    const rawOrientVal = String(item[colMap.orientation] || '').trim();
-                    if (rawOrientVal.toLowerCase() !== 'tamamladı') {
-                        grouped[wh].orientation.incomplete.push({
-                            'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawOrientVal === '' || rawOrientVal === '-'
-                        });
-                    }
-                    const rawChatVal = String(item[colMap.chat] || '').trim();
-                    if (rawChatVal.toLowerCase() !== 'tamamladı') {
-                        grouped[wh].chat.incomplete.push({
-                            'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawChatVal === '' || rawChatVal === '-'
-                        });
-                    }
+                    const rawOrientVal = String(item[colMap.orientation] || '').trim().toLowerCase();
+                    if (rawOrientVal !== 'tamamladı') grouped[wh].orientation.incomplete.push({
+                        'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawOrientVal === '' || rawOrientVal === '-'
+                    });
+
+                    const rawChatVal = String(item[colMap.chat] || '').trim().toLowerCase();
+                    if (rawChatVal !== 'tamamladı') grouped[wh].chat.incomplete.push({
+                        'Courier Name': item[colMap.name], 'Courier Gsm': item[colMap.phone], 'isBlank': rawChatVal === '' || rawChatVal === '-'
+                    });
                 });
                 return grouped;
             }, [csvData, searchName, colMap]);
 
             const toggleWarehouse = (w) => setExpandedWarehouses(prev => ({...prev, [w]: !prev[w]}));
             
-            // --- WHATSAPP MESAJ ---
             const getWhatsappLink = (phone, type, name = '') => {
                 if (!phone) return '#';
                 let p = String(phone).replace(/\D/g, '');
@@ -333,15 +323,17 @@ E Mobil Plus linki ; https://play.google.com/store/apps/details?id=com.enocta.em
 https://www.getirup.com/getirup/eep/main/activity/${chatId}
 
 Giriş Yöntemleri🚨
-📎E.mobil uygulaması telefon yüklü olmalı. ( Google Play Store içerisinde mevcut. )Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz
+<li><strong>E.Mobil</strong> uygulaması telefonda yüklü olmalı.</li>
+            <li>MDU’ya giriş yapın → Profil bölümünden <strong>Getirup</strong>’ı seçin.</li>
+            <li>Şifresiz giriş kullanabilirsiniz.</li>
 
-Yada
-
-📎E.Mobil uygulamasına giriş yaparak ulaşabilirsiniz.
-Kurum Kodu: GETIRUP
-Kullanıcı adı: ${p.substring(2)} (Başında 0 olmadan)
-Parolamı unuttum diyerek yeni parola oluşturabilirsiniz.
-
+<h4>Alternatif Giriş</h4>
+          <ul>
+            <li>E.Mobil uygulamasına giriş yaparak erişebilirsiniz.</li>
+            <li>Kurum Kodu: <code>GETIRUP</code></li>
+            <li>Kullanıcı adı: Telefon numaranız (başında 0 olmadan)</li>
+            <li>“Parolamı unuttum” ile yeni parola oluşturabilirsiniz.</li>
+          </ul>
 Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 }
                 return `https://wa.me/${p}?text=${encodeURIComponent(message)}`;
@@ -355,72 +347,94 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 const originalPadding = el.style.padding;
                 const originalBorderRadius = el.style.borderRadius;
                 
-                // Screenshot öncesi gizlenecek elemanlar
                 const icons = el.querySelectorAll('.hide-on-capture');
                 icons.forEach(i => i.style.display = 'none');
                 
-                // Screenshot öncesi görünür olacak elemanlar (Arka plan görseli vb.)
-                const bgImage = el.querySelectorAll('.capture-bg-image');
-                bgImage.forEach(b => b.style.display = 'block');
+                const captureElements = el.querySelectorAll('.show-on-capture');
+                captureElements.forEach(b => b.style.display = 'block');
 
-                // STİL AYARLARI (Görsel Tasarımı)
-                el.style.backgroundColor = "#5d3ebc"; // Getir Moru
-                el.style.color = "#ffd300"; // Getir Sarısı
-                el.style.padding = "30px";
+                const links = el.querySelectorAll('li > a');
+                links.forEach(a => a.style.display = 'none');
+
+                el.style.backgroundColor = "#5d3ebc"; 
+                el.style.color = "#ffd10d"; 
+                el.style.padding = "60px 30px 30px 30px";
                 el.style.borderRadius = "0px";
-                el.style.position = "relative"; // Arka plan görseli için
+                el.style.position = "relative"; 
                 
-                // Liste elemanlarının stilini değiştir (Beyaz kutu)
                 const listItems = el.querySelectorAll('li');
                 listItems.forEach(li => {
                     li.style.backgroundColor = "white";
-                    li.style.color = "black";
+                    li.style.color = "#44546a"; 
                     li.style.fontWeight = "bold";
-                    li.style.border = "none";
+                    li.style.border = "2px solid #f29b26"; 
                     li.style.marginBottom = "8px";
                     li.style.borderRadius = "8px";
                     li.style.padding = "10px 15px";
+                    li.style.justifyContent = "center"; 
+                    li.style.textAlign = "center";
                 });
                 
-                // Başlıkların rengini ayarla
                 const headers = el.querySelectorAll('h4, h5, p, span, div');
                 headers.forEach(h => {
-                    if(!h.closest('li')) { // Liste içindekilere dokunma
-                        h.style.color = "#ffd300"; 
-                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd300"; // Tarih vb.
-                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd300"; // Link
+                    if(!h.closest('li')) { 
+                        h.style.color = "#ffd10d"; 
+                        if(h.classList.contains('text-slate-500')) h.style.color = "#ffd10d";
+                        if(h.classList.contains('text-blue-600')) h.style.color = "#ffd10d";
+                        if(h.classList.contains('text-purple-700')) h.style.color = "#ffd10d";
+                    } else {
+                         h.style.color = "#44546a";
+                    }
+                    
+                    if (h.classList.contains('date-label')) {
+                        h.style.fontSize = '24px'; 
+                        h.style.fontWeight = '900'; 
                     }
                 });
-                
-                // Beyaz link rengini düzelt (eğer varsa)
-                const links = el.querySelectorAll('a');
-                // links.forEach(a => a.style.display = 'none'); // WhatsApp butonlarını görselde gizle
+
+                await new Promise(r => setTimeout(r, 200));
 
                 try {
-                    const canvas = await window.html2canvas(el, { scale: 2, backgroundColor: "#5d3ebc", useCORS: true });
+                    const canvas = await window.html2canvas(el, { 
+                        scale: 2, 
+                        backgroundColor: "#5d3ebc", 
+                        useCORS: true,
+                        logging: false
+                    });
                     return canvas;
+                } catch(e) {
+                    console.error("Canvas hatası:", e);
+                    setHasError(true);
+                    return null;
                 } finally {
-                    // STİLLERİ GERİ AL
                     el.style.backgroundColor = originalBg;
                     el.style.color = originalColor;
                     el.style.padding = originalPadding;
                     el.style.borderRadius = originalBorderRadius;
                     
                     icons.forEach(i => i.style.display = '');
-                    bgImage.forEach(b => b.style.display = 'none');
-                    
+                    captureElements.forEach(b => b.style.display = 'none');
+                    links.forEach(a => a.style.display = ''); 
+
                     listItems.forEach(li => {
-                        li.style.backgroundColor = ""; // class'tan gelen renge dön
+                        li.style.backgroundColor = ""; 
                         li.style.color = "";
                         li.style.fontWeight = "";
                         li.style.border = "";
                         li.style.marginBottom = "";
                         li.style.borderRadius = "";
                         li.style.padding = "";
+                        li.style.justifyContent = "";
+                        li.style.textAlign = "";
                     });
 
-                    headers.forEach(h => h.style.color = "");
-                    // links.forEach(a => a.style.display = '');
+                    headers.forEach(h => {
+                        h.style.color = "";
+                        if (h.classList.contains('date-label')) {
+                             h.style.fontSize = "";
+                             h.style.fontWeight = "";
+                        }
+                    });
                 }
             };
 
@@ -437,39 +451,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 link.download = getFileName(whName);
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-            };
-
-            const handleShareText = (whName) => {
-                const data = processedData[whName];
-                const currentList = activeTab === 'orientation' ? data.orientation.incomplete : data.chat.incomplete;
-                if (!currentList || !currentList.length) return;
-                const dateStr = new Date().toLocaleDateString('tr-TR');
-                const typeStr = activeTab === 'orientation' ? 'Oryantasyon' : 'Öğretici Sohbet';
-                let message = `*${whName} - ${typeStr} Eksik Kurye Listesi (${dateStr})*\n\n`;
-                currentList.forEach((c, i) => message += `${i + 1}. ${c['Courier Name']} (${c['Courier Gsm']})\n`);
-                message += `\n*Toplam Eksik:* ${currentList.length} Kişi`;
-                let url = targetPhone ? `https://wa.me/${targetPhone.replace(/\D/g, '').replace(/^0/, '90')}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
-                window.open(url, '_blank');
-            };
-
-            const handleShareImage = async (whName) => {
-                const canvas = await createScreenshot(whName);
-                if (!canvas) return;
-                canvas.toBlob(async (blob) => {
-                    const file = new File([blob], getFileName(whName), { type: 'image/png' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try { await navigator.share({ files: [file] }); } catch (e) {}
-                    } else {
-                         try {
-                            const item = new ClipboardItem({ 'image/png': blob });
-                            await navigator.clipboard.write([item]);
-                            if (confirm("Görsel panoya kopyalandı! WhatsApp Web açılsın mı?")) window.open("https://web.whatsapp.com", "_blank");
-                        } catch (err) {
-                            alert("Otomatik kopyalama yapılamadı. Görsel indiriliyor.");
-                            handleDownloadSingle(whName);
-                        }
-                    }
-                }, 'image/png');
             };
 
             const downloadAll = async () => {
@@ -490,8 +471,19 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                 alert("Tüm indirmeler tamamlandı!");
             };
 
-            // Geçerli ayı Türkçe olarak al
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
+
+            if (hasError) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-red-50 p-4 text-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-red-600 mb-2">Bir Hata Oluştu!</h1>
+                            <p className="text-slate-600 mb-4">Görsel oluşturulurken bir sorun çıktı. Sayfayı yenileyip tekrar deneyin.</p>
+                            <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-6 py-2 rounded-lg">Yenile</button>
+                        </div>
+                    </div>
+                );
+            }
 
             return (
                 <div className="min-h-screen bg-slate-50 p-4 font-sans text-slate-800 pb-24">
@@ -500,7 +492,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v24
+                                Eğitim Takip Asistanı v24.6 (Sade Arka Plan)
                             </h1>
                             <p className="text-slate-500 mt-2 text-sm">
                                 Hızlı ve otomatik raporlama asistanı.
@@ -513,24 +505,16 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                             <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex justify-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500 hover:text-slate-700'}`}>Öğretici Sohbetler</button>
                         </div>
 
-                        {/* EĞİTİM BİLGİ GİRİŞİ (TXT UPLOAD ve MANUEL) */}
+                        {/* EĞİTİM BİLGİ GİRİŞİ */}
                         {activeTab === 'chat' && (
                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in relative">
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="font-bold text-purple-800 flex items-center gap-2"><FileUp size={16}/> Eğitim Bilgileri</h3>
-                                    
-                                    {/* TXT Yükleme Butonu */}
                                     <div className="relative">
                                         <button className="text-xs bg-white px-3 py-1.5 rounded border border-purple-200 text-purple-700 hover:bg-purple-100 font-medium flex items-center gap-1">
                                             <Upload size={12}/> Bilgi Dosyası Yükle (.txt)
                                         </button>
-                                        <input 
-                                            type="file" 
-                                            accept=".txt" 
-                                            onChange={handleIdFile} 
-                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                                            title="id.txt Yükle"
-                                        />
+                                        <input type="file" accept=".txt" onChange={handleIdFile} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" title="id.txt Yükle"/>
                                     </div>
                                 </div>
                                 {chatSettings.id && chatSettings.name && (
@@ -576,23 +560,13 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                         </button>
                                     )}
                                 </div>
-                                
                                 {showColumnSettings && (
                                     <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs space-y-2 animate-fade-in">
                                         <p className="font-bold text-blue-800">Sütun Eşleştirmeleri</p>
-                                        {[
-                                            {k:'sy', l:'SY / Yönetici'}, {k:'sgs', l:'SGS / Sorumlu'}, 
-                                            {k:'warehouse', l:'Depo Adı'}, {k:'name', l:'Kurye Adı'}, 
-                                            {k:'phone', l:'Telefon'}, {k:'orientation', l:'Oryantasyon'}, 
-                                            {k:'chat', l:'Sohbet'}
-                                        ].map(field => (
-                                            <div key={field.k} className="flex flex-col">
-                                                <label className="text-blue-600 mb-1">{field.l}</label>
-                                                <select 
-                                                    value={colMap[field.k]} 
-                                                    onChange={(e) => setColMap({...colMap, [field.k]: e.target.value})}
-                                                    className="p-2 border rounded bg-white"
-                                                >
+                                        {['sy', 'sgs', 'warehouse', 'name', 'phone', 'orientation', 'chat'].map(k => (
+                                            <div key={k} className="flex flex-col">
+                                                <label className="text-blue-600 mb-1 uppercase">{k}</label>
+                                                <select value={colMap[k]} onChange={(e) => setColMap({...colMap, [k]: e.target.value})} className="p-2 border rounded bg-white">
                                                     <option value="">Seçilmedi</option>
                                                     {allHeaders.map((h, i) => <option key={i} value={h}>{h}</option>)}
                                                 </select>
@@ -600,7 +574,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                         ))}
                                     </div>
                                 )}
-
                                 <div className="relative mb-3">
                                     <select value={searchName} onChange={e => setSearchName(e.target.value)} disabled={!managerList.length} className="w-full pl-10 pr-8 py-3 bg-slate-50 border rounded-lg appearance-none outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">{managerList.length ? "Listeden Seçiniz..." : "Önce Dosya Yükleyin"}</option>
@@ -609,19 +582,11 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                     <Search className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
                                     <ChevronDown className="absolute right-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
-
                                 <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        value={targetPhone} 
-                                        onChange={saveTargetPhone} 
-                                        placeholder="Raporun Gönderileceği Numara (Opsiyonel)" 
-                                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                                    />
+                                    <input type="text" value={targetPhone} onChange={saveTargetPhone} placeholder="Raporun Gönderileceği Numara (Opsiyonel)" className="w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"/>
                                     <PhoneIcon className="absolute left-3 top-3.5 text-slate-400 w-5 h-5" />
                                 </div>
                                 <p className="text-[10px] text-slate-400 mt-1 pl-1">Numara girerseniz "WhatsApp Listesi" butonu direkt o kişiye gönderir.</p>
-
                                 {managerList.length > 0 && !searchName && <p className="text-xs text-red-500 mt-2 font-bold animate-pulse">👆 Lütfen isminizi seçin!</p>}
                             </div>
                         </div>
@@ -638,7 +603,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                     const incompleteCount = currentData.incomplete.length;
                                     const completedCount = total - incompleteCount;
                                     const completionRate = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-
                                     let rateColor = "text-red-600";
                                     if (completionRate > 10 && completionRate <= 30) rateColor = "text-orange-500";
                                     else if (completionRate > 30 && completionRate <= 60) rateColor = "text-amber-500";
@@ -655,7 +619,6 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                         <p className="text-xs text-slate-500">Eksik: <span className="font-bold text-red-600">{incompleteCount}</span> / {total}</p>
                                                     </div>
                                                 </div>
-                                                
                                                 <div className="flex items-center gap-4">
                                                      <div className="text-right">
                                                         <span className={`block text-lg font-bold ${rateColor}`}>%{completionRate}</span>
@@ -669,89 +632,45 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                                 <div className="border-t border-slate-100 bg-slate-50/50 p-4">
                                                     {/* Capture Area */}
                                                     <div ref={el => listRefs.current[whName] = el} className="bg-white p-4 md:p-6 rounded-lg border border-red-200 shadow-sm max-w-2xl mx-auto mb-4 relative overflow-hidden">
-                                                        
-                                                        {/* LOGO (Görsel Modu İçin) */}
-                                                        <div className="capture-bg-image hidden absolute top-0 left-0 right-0 p-4 flex justify-center opacity-10">
-                                                            <img src="https://cdn.getir.com/misc/getir-logo.png" alt="Getir Logo" className="w-24 opacity-50" />
+                                                        <div className="show-on-capture hidden absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 w-32 z-20">
+                                                            <GetirTextLogo />
                                                         </div>
-
-                                                        {/* ARKA PLAN GÖRSELİ (Gerçekçi Kurye) */}
-                                                        <div className="capture-bg-image hidden absolute bottom-0 right-0 opacity-20 pointer-events-none transform translate-x-1/4 translate-y-1/4 z-0">
-                                                            
-                                                        </div>
-
                                                         <div className="mb-4 border-b border-red-100 pb-3 relative z-10 mt-12">
-                                                            <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500">{new Date().toLocaleDateString('tr-TR')}</span></div>
-                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eksik' : 'Öğretici Sohbet Eğitimi Eksik'}</h5>
+                                                            <div className="flex justify-between items-center"><h4 className="font-bold text-lg text-slate-800">{whName}</h4><span className="text-xs text-slate-500 date-label">{new Date().toLocaleDateString('tr-TR')}</span></div>
+                                                            <h5 className={`font-semibold text-sm flex items-center gap-2 ${activeTab === 'orientation' ? 'text-blue-700' : 'text-purple-700'}`}><XCircle size={16} className="text-red-500"/> {activeTab === 'orientation' ? 'Oryantasyon Eğitimi' : 'Öğretici Sohbetler Eğitimi'}</h5>
                                                         </div>
                                                         <ul className="space-y-2 relative z-10">
                                                             {currentData.incomplete.map((c, i) => (
                                                                 <li key={i} className="text-sm text-slate-700 bg-red-50 p-2 md:p-3 rounded flex justify-between items-center border border-red-100">
-                                                                    <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-2 w-full justify-center">
                                                                         <span className="font-semibold text-xs md:text-sm">{c['Courier Name']}</span>
-                                                                        {c.isBlank && (
-                                                                            <div className="tooltip-container relative hide-on-capture">
-                                                                                <AlertTriangle size={14} className="text-amber-500 cursor-help" />
-                                                                                <div className="tooltip-text invisible absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-50 text-center">
-                                                                                    Entegrasyonu tamamlanmamış kurye olabilir dikkat!
-                                                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
+                                                                        {c.isBlank && <div className="tooltip-container relative hide-on-capture"><AlertTriangle size={14} className="text-amber-500 cursor-help" /><div className="tooltip-text invisible absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg z-50 text-center">Entegrasyonu tamamlanmamış kurye olabilir dikkat!</div></div>}
                                                                     </div>
-                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
+                                                                    <a href={getWhatsappLink(c['Courier Gsm'], activeTab, c['Courier Name'])} target="_blank" className="text-green-600 bg-white px-2 py-1 rounded border border-green-200 text-xs font-mono flex items-center gap-1 no-underline ml-auto"><MessageSquare size={12}/> {c['Courier Gsm']}</a>
                                                                 </li>
                                                             ))}
                                                             {currentData.incomplete.length === 0 && <li className="text-center py-4 text-green-600 bg-green-50 rounded font-medium text-sm">Herkes tamamladı! 🎉</li>}
                                                         </ul>
-
-                                                        {/* ÖĞRETİCİ SOHBETLER İÇİN GÖRSEL ALTI BİLGİ NOTU */}
                                                         {activeTab === 'chat' && (
                                                             <div className="mt-6 pt-4 border-t-2 border-slate-100 text-xs text-slate-700 leading-relaxed relative z-10">
-                                                                <p className="font-bold text-center text-sm text-purple-800 mb-2">
-                                                                    🚀 {currentMonth} Ayı Öğretici Sohbetler Yayında! 🚀
-                                                                </p>
-                                                                <p className="mb-2">
-                                                                    📣 {currentMonth} Ayı Öğretici Sohbetler <span className="font-bold">"{chatSettings.name || 'Eğitim Adı'}"</span> adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler.
-                                                                </p>
-                                                                <p className="mb-4 text-blue-600 font-mono break-all font-bold">
-                                                                    https://www.getirup.com/getirup/eep/main/activity/{chatSettings.id || 'Eğitim ID'}
-                                                                </p>
-                                                                
+                                                                <p className="font-bold text-center text-sm text-purple-800 mb-2">🚀 {currentMonth} Ayı Öğretici Sohbetler Yayında! 🚀</p>
+                                                                <p className="mb-2">📣 {currentMonth} Ayı Öğretici Sohbetler <span className="font-bold">"{chatSettings.name || 'Eğitim Adı'}"</span> adlı videoya aşağıdaki linkten ulaşabilirsiniz. Güvenli sürüşler.</p>
+                                                                <p className="mb-4 text-blue-600 font-mono break-all font-bold">https://www.getirup.com/getirup/eep/main/activity/{chatSettings.id || 'Eğitim ID'}</p>
                                                                 <p className="font-bold text-slate-800 mb-1 border-b border-slate-200 pb-1">Giriş Yöntemleri 🚨</p>
                                                                 <div className="space-y-2">
-                                                                    <p>
-                                                                        📎 <strong>E.mobil uygulaması</strong> telefonda yüklü olmalı (Google Play Store içerisinde mevcut). Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz.
-                                                                    </p>
+                                                                    <p>📎 <strong>E.mobil uygulaması</strong> telefonda yüklü olmalı. Sonrasında MDU’ya giriş yapın ve profil bölümünde Getirup’ı tıklayın. Şifresiz giriş yapabilirsiniz.</p>
                                                                     <p className="font-bold text-center text-slate-400 text-[10px]">- YADA -</p>
-                                                                    <p>
-                                                                        📎 <strong>E.Mobil uygulamasına</strong> giriş yaparak ulaşabilirsiniz.<br/>
-                                                                        <span className="font-semibold text-purple-700">Kurum Kodu:</span> GETIRUP<br/>
-                                                                        <span className="font-semibold text-purple-700">Kullanıcı adı:</span> Telefon numaranız (başında 0 olmadan)<br/>
-                                                                        Parolamı unuttum diyerek yeni parola oluşturabilirsiniz.
-                                                                    </p>
+                                                                    <p>📎 <strong>E.Mobil uygulamasına</strong> giriş yaparak ulaşabilirsiniz.<br/><span className="font-semibold text-purple-700">Kurum Kodu:</span> GETIRUP<br/><span className="font-semibold text-purple-700">Kullanıcı adı:</span> Telefon numaranız (başında 0 olmadan)<br/>Parolamı unuttum diyerek yeni parola oluşturabilirsiniz.</p>
                                                                 </div>
                                                             </div>
                                                         )}
                                                     </div>
                                                     
-                                                    {/* Action Buttons */}
-                                                    {currentData.incomplete.length > 0 && (
-                                                        <div className="flex justify-center gap-2 flex-wrap">
-                                                            <button onClick={() => handleShareText(whName)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-green-600 transition-colors">
-                                                                <MessageSquare size={16}/> 
-                                                                {targetPhone ? 'Kişiye Gönder' : 'WhatsApp Listesi'}
-                                                            </button>
-                                                            
-                                                            <button onClick={() => handleShareImage(whName)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-blue-700 transition-colors">
-                                                                <Copy size={16}/> 
-                                                                <span className="hidden sm:inline">Görsel Kopyala</span>
-                                                                <span className="sm:hidden">Görsel</span>
-                                                            </button>
-
-                                                            <button onClick={() => handleDownloadSingle(whName)} className="bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><Download size={16}/></button>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex justify-center gap-2 flex-wrap">
+                                                        <button onClick={() => handleShareText(whName)} className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-green-600 transition-colors"><MessageSquare size={16}/> {targetPhone ? 'Kişiye Gönder' : 'WhatsApp Listesi'}</button>
+                                                        <button onClick={() => handleShareImage(whName)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center gap-2 hover:bg-blue-700 transition-colors"><Copy size={16}/> <span className="hidden sm:inline">Görsel Kopyala</span><span className="sm:hidden">Görsel</span></button>
+                                                        <button onClick={() => handleDownloadSingle(whName)} className="bg-white border border-slate-300 text-slate-600 px-3 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><Download size={16}/></button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -760,9 +679,7 @@ Eğitimi tamamlayıp ekran görüntüsü paylaşmanızı rica ediyorum.`;
                                 
                                 <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-50">
                                     <div className="bg-white p-2 rounded-full shadow-lg border pointer-events-auto">
-                                        <button onClick={downloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-md">
-                                            {downloadingAll ? <Loader className="animate-spin"/> : <Layers size={20}/>} Tümünü İndir
-                                        </button>
+                                        <button onClick={downloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-md">{downloadingAll ? <Loader className="animate-spin"/> : <Layers size={20}/>} Tümünü İndir</button>
                                     </div>
                                 </div>
                             </div>
