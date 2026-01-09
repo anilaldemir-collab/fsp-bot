@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v25.9</title>
+    <title>Eğitim Takip Asistanı v26.0</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -106,20 +106,29 @@
         }
 
         .poster-logo {
-            width: 62px; height: 62px; border-radius: 999px;
+            width: 62px; 
+            height: 62px; 
+            border-radius: 999px;
             background: var(--yellow);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+            display: grid; 
+            place-items: center; /* html2canvas için en stabil ortalama yöntemi */
             color: #3B1A8A; 
             font-weight: 950; 
-            font-size: 16px;
+            font-size: 15px;
             box-shadow: 0 12px 22px rgba(0,0,0,.18);
             flex: 0 0 auto;
             padding: 0;
             margin: 0;
-            line-height: 1; /* Metnin dikeyde kaymasını önler */
-            text-indent: -2px; /* Letter spacing dengesi için minik bir kaydırma */
+            line-height: 0; /* İçerik için reset */
+            text-align: center;
+        }
+        
+        .poster-logo-text {
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+            line-height: 1;
+            /* Letter spacing dikeyde dengesizlik yapmasın diye span içinde yönetiyoruz */
         }
 
         .poster-kicker {
@@ -138,8 +147,9 @@
             padding: 14px 20px; border-radius: var(--r-pill);
             border: 1px solid rgba(255,255,255,0.3);
             background: rgba(0,0,0,0.15);
-            display: flex; 
-            align-items: center; 
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
             justify-content: center;
             gap: 12px;
             box-shadow: var(--shadow-soft);
@@ -148,7 +158,7 @@
         }
 
         .poster-date-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--yellow); box-shadow: 0 0 0 6px rgba(255,209,13,0.16); }
-        .poster-date-text { font-weight: 950; font-size: 22px; line-height: 1; }
+        .poster-date-text { font-weight: 950; font-size: 22px; line-height: 1; margin: 0; padding: 0; }
 
         .poster-main { padding: 24px 28px 28px 28px; display: flex; flex-direction: column; gap: 18px; }
 
@@ -351,17 +361,27 @@
                     frame.style.border = "1px solid rgba(255,255,255,0.4)";
                 }
 
-                // LOGO VE YAZI MERKEZLEME SABİTLEME
+                // LOGO VE YAZI MERKEZLEME İÇİN KRİTİK GÜNCELLEME
                 const logo = el.querySelector('.poster-logo');
+                const originalLogoStyle = logo ? logo.getAttribute('style') : '';
                 if(logo) {
-                    logo.style.display = "flex";
-                    logo.style.alignItems = "center";
-                    logo.style.justifyContent = "center";
-                    logo.style.paddingTop = "2px"; // Görsel dikey dengeleme
+                    logo.style.display = "grid";
+                    logo.style.placeItems = "center";
+                    logo.style.lineHeight = "0";
+                    logo.style.padding = "0";
+                }
+
+                const datePill = el.querySelector('.poster-date-pill');
+                const originalDatePillStyle = datePill ? datePill.getAttribute('style') : '';
+                if(datePill) {
+                    datePill.style.display = "grid";
+                    datePill.style.gridAutoFlow = "column";
+                    datePill.style.alignItems = "center";
+                    datePill.style.justifyContent = "center";
                 }
 
                 try {
-                    await new Promise(r => setTimeout(r, 400)); // Render bekleme süresi artırıldı
+                    await new Promise(r => setTimeout(r, 500)); // Render bekleme süresi artırıldı
 
                     const canvas = await html2canvas(el, { 
                         scale: 2, 
@@ -378,8 +398,11 @@
                 } catch(e) {
                     console.error("Canvas hatası:", e);
                 } finally {
+                    // Stilleri eski haline getir
                     el.setAttribute('style', originalStyle || '');
                     if(frame) frame.setAttribute('style', originalFrameStyle || '');
+                    if(logo) logo.setAttribute('style', originalLogoStyle || '');
+                    if(datePill) datePill.setAttribute('style', originalDatePillStyle || '');
                 }
             };
 
@@ -403,7 +426,7 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v25.9
+                                Eğitim Takip Asistanı v26.0
                             </h1>
                         </div>
 
@@ -484,7 +507,9 @@
                                                 <div className="poster-frame">
                                                     <header className="poster-header">
                                                         <div className="poster-brand">
-                                                            <div className="poster-logo font-getir tracking-tighter">getir</div>
+                                                            <div className="poster-logo font-getir tracking-tighter">
+                                                                <span className="poster-logo-text">getir</span>
+                                                            </div>
                                                             <div className="brandText">
                                                                 <div className="poster-kicker">
                                                                     <span className="poster-kdot"></span> {whName} <span className="poster-kdot"></span> {activeTab === 'orientation' ? 'ORYANTASYON' : 'ÖĞRETİCİ SOHBETLER'}
@@ -492,7 +517,7 @@
                                                                 <h1 className="poster-title uppercase">{activeTab === 'orientation' ? 'ORYANTASYON EĞİTİMİ' : 'ÖĞRETİCİ SOHBETLER EĞİTİMİ'}</h1>
                                                                 <p className="poster-subtitle">
                                                                     {activeTab === 'chat' 
-                                                                        ? ` ${currentMonth} ayı içeriği: “${chatSettings.name || 'Eğitim Adı'}” videosu yayında.`
+                                                                        ? `Bulunduğumuz ${currentMonth} ayı içeriği: “${chatSettings.name || 'Eğitim Adı'}” videosu yayında.`
                                                                         : `Oryantasyon eğitimi tamamlamayan kurye listesi güncellendi.`}
                                                                 </p>
                                                             </div>
