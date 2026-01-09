@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v25.1</title>
+    <title>Eğitim Takip Asistanı v25.2</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,7 +53,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         
         /* Jihosoft Bold simülasyonu */
-        .font-getir { font-family: 'Varela Round', sans-serif; letter-spacing: -3px; font-weight: 800; }
+        .font-getir { font-family: 'jihosoft', 'Varela Round', sans-serif; letter-spacing: -3px; font-weight: 800; }
 
         /* POSTER ÖZEL STİLLERİ (Capture Area) */
         .poster-output {
@@ -63,6 +63,9 @@
                 radial-gradient(1200px 700px at 18% 10%, rgba(255,209,13,.18), transparent 58%),
                 radial-gradient(900px 600px at 82% 18%, rgba(231,230,230,.12), transparent 55%),
                 linear-gradient(180deg, var(--purple), var(--purple2));
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         .poster-frame {
@@ -184,7 +187,6 @@
             const [allHeaders, setAllHeaders] = useState([]);
             const [targetPhone, setTargetPhone] = useState('');
             const [isAutoLoaded, setIsAutoLoaded] = useState(false);
-            const [hasError, setHasError] = useState(false);
             
             const [chatSettings, setChatSettings] = useState({ id: '', name: '' });
             const [colMap, setColMap] = useState({ sy: '', sgs: '', warehouse: '', orientation: '', chat: '', name: '', phone: '' });
@@ -262,7 +264,6 @@
                         const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
                         setCsvData(jsonData);
 
-                        // Yönetici listesi
                         const managers = new Set();
                         jsonData.forEach(row => {
                            if(row[newColMap.sy]) managers.add(row[newColMap.sy]);
@@ -298,11 +299,33 @@
             
             const handleDownloadSingle = async (whName) => {
                 if (!listRefs.current[whName]) return;
-                const canvas = await html2canvas(listRefs.current[whName], { scale: 2, useCORS: true });
-                const link = document.createElement('a');
-                link.download = `${whName}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                const el = listRefs.current[whName];
+                
+                // ORANLARI KORUMAK İÇİN ÇÖZÜM:
+                // Çekim anında genişliği sabitleyerek ekran boyutundan bağımsız standart çıktı sağlıyoruz.
+                const originalWidth = el.style.width;
+                const originalMinWidth = el.style.minWidth;
+                el.style.width = "850px";
+                el.style.minWidth = "850px";
+
+                try {
+                    const canvas = await html2canvas(el, { 
+                        scale: 2, 
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: 1000 // Sanal pencere genişliği
+                    });
+                    const link = document.createElement('a');
+                    link.download = `${whName}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch(e) {
+                    console.error("Canvas hatası:", e);
+                } finally {
+                    // Stilleri eski haline getir
+                    el.style.width = originalWidth;
+                    el.style.minWidth = originalMinWidth;
+                }
             };
 
             const handleDownloadAll = async () => {
@@ -310,7 +333,7 @@
                 const keys = Object.keys(processedData);
                 for (const key of keys) {
                    await handleDownloadSingle(key);
-                   await new Promise(r => setTimeout(r, 500));
+                   await new Promise(r => setTimeout(r, 600));
                 }
                 setDownloadingAll(false);
             };
@@ -325,25 +348,25 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v25.1
+                                Eğitim Takip Asistanı v25.2
                             </h1>
                         </div>
 
                         <div className="flex bg-white rounded-xl p-1 max-w-md mx-auto shadow-sm border">
-                            <button onClick={() => setActiveTab('orientation')} className={`flex-1 py-2 text-sm font-medium rounded-lg ${activeTab === 'orientation' ? 'bg-blue-100 text-blue-700' : 'text-slate-500'}`}>Oryantasyon</button>
-                            <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500'}`}>Öğretici Sohbetler</button>
+                            <button onClick={() => setActiveTab('orientation')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'orientation' ? 'bg-blue-100 text-blue-700' : 'text-slate-500'}`}>Oryantasyon</button>
+                            <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500'}`}>Öğretici Sohbetler</button>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-4">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative min-h-[160px]">
-                                <input type="file" onChange={handleFileUpload} disabled={loading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                {loading ? <Loader className="animate-spin text-blue-500 mb-2" size={32}/> : <Upload className="text-blue-500 mb-2" size={32}/>}
+                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center relative min-h-[160px] hover:bg-slate-50 transition-colors cursor-pointer group">
+                                <input type="file" onChange={handleFileUpload} disabled={loading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                {loading ? <Loader className="animate-spin text-blue-500 mb-2" size={32}/> : <Upload className="text-blue-500 mb-2 group-hover:scale-110 transition-transform" size={32}/>}
                                 <span className="font-medium text-slate-700">{fileName || "Excel Dosyası Yükle"}</span>
                             </div>
 
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center">
                                 <label className="text-sm font-medium text-slate-600 mb-2">Yönetici Seçiniz</label>
-                                <select value={searchName} onChange={e => setSearchName(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                                <select value={searchName} onChange={e => setSearchName(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                                     <option value="">Seçiniz...</option>
                                     {managerList.map((m, i) => <option key={i} value={m}>{m}</option>)}
                                 </select>
@@ -356,7 +379,7 @@
 
                             return (
                                 <div key={whName} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <div onClick={() => toggleWarehouse(whName)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50">
+                                    <div onClick={() => toggleWarehouse(whName)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
                                         <div className="flex items-center gap-3">
                                             <div className={`p-2 rounded-lg ${activeTab === 'orientation' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}><Filter size={18} /></div>
                                             <div>
@@ -370,7 +393,7 @@
                                     {isExpanded && (
                                         <div className="border-t bg-slate-50/50 p-4">
                                             {/* --- POSTER capture area --- */}
-                                            <div ref={el => listRefs.current[whName] = el} className="poster-output mx-auto max-w-4xl">
+                                            <div ref={el => listRefs.current[whName] = el} className="poster-output">
                                                 <div className="poster-frame">
                                                     <header className="poster-header">
                                                         <div className="brand">
@@ -403,7 +426,7 @@
                                                                 {currentData.incomplete.map((c, i) => (
                                                                     <li key={i}>{c[colMap.name]}</li>
                                                                 ))}
-                                                                {currentData.incomplete.length === 0 && <li>Harika! Herkes tamamladı 🎉</li>}
+                                                                {currentData.incomplete.length === 0 && <li className="text-green-600">Harika! Herkes tamamladı 🎉</li>}
                                                             </ul>
                                                         </section>
 
@@ -441,7 +464,7 @@
                                             </div>
                                             
                                             <div className="mt-4 flex justify-center gap-2">
-                                                <button onClick={() => handleDownloadSingle(whName)} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md hover:bg-blue-700 transition-all"><Download size={18}/> Görseli İndir</button>
+                                                <button onClick={() => handleDownloadSingle(whName)} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md hover:bg-blue-700 transition-all active:scale-95"><Download size={18}/> Görseli İndir</button>
                                             </div>
                                         </div>
                                     )}
@@ -450,7 +473,7 @@
                         })}
 
                         <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none">
-                            <button onClick={handleDownloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-8 py-4 rounded-full font-bold shadow-lg pointer-events-auto flex items-center gap-2">
+                            <button onClick={handleDownloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-8 py-4 rounded-full font-bold shadow-lg pointer-events-auto flex items-center gap-2 hover:bg-slate-700 transition-all active:scale-95">
                                 {downloadingAll ? <Loader className="animate-spin" size={20}/> : <Layers size={20}/>} Tüm Görselleri İndir
                             </button>
                         </div>
