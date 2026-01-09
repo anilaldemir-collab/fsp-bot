@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v26.0</title>
+    <title>Eğitim Takip Asistanı v26.1</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -119,16 +119,17 @@
             flex: 0 0 auto;
             padding: 0;
             margin: 0;
-            line-height: 0; /* İçerik için reset */
+            line-height: 1; 
             text-align: center;
         }
         
         .poster-logo-text {
-            display: inline-block;
+            display: block;
             margin: 0;
             padding: 0;
             line-height: 1;
-            /* Letter spacing dikeyde dengesizlik yapmasın diye span içinde yönetiyoruz */
+            /* Dikey kaymayı span üzerinden kontrol altına alıyoruz */
+            transform: translateY(1px);
         }
 
         .poster-kicker {
@@ -345,7 +346,6 @@
                 
                 const originalStyle = el.getAttribute('style');
                 
-                // --- ÇEKİM ANINDA KESİN HİZALAMA VE STİL SABİTLEME ---
                 el.style.width = "900px";
                 el.style.minWidth = "900px";
                 el.style.backgroundColor = "#5D3EBC"; 
@@ -367,7 +367,7 @@
                 if(logo) {
                     logo.style.display = "grid";
                     logo.style.placeItems = "center";
-                    logo.style.lineHeight = "0";
+                    logo.style.lineHeight = "1";
                     logo.style.padding = "0";
                 }
 
@@ -381,7 +381,7 @@
                 }
 
                 try {
-                    await new Promise(r => setTimeout(r, 500)); // Render bekleme süresi artırıldı
+                    await new Promise(r => setTimeout(r, 400)); 
 
                     const canvas = await html2canvas(el, { 
                         scale: 2, 
@@ -398,7 +398,6 @@
                 } catch(e) {
                     console.error("Canvas hatası:", e);
                 } finally {
-                    // Stilleri eski haline getir
                     el.setAttribute('style', originalStyle || '');
                     if(frame) frame.setAttribute('style', originalFrameStyle || '');
                     if(logo) logo.setAttribute('style', originalLogoStyle || '');
@@ -407,26 +406,38 @@
             };
 
             const handleDownloadAll = async () => {
+                if (!processedData) return;
                 setDownloadingAll(true);
+
+                // Tüm depoları genişlet (Görsel oluşturulabilmesi için DOM'da olmaları şart)
                 const keys = Object.keys(processedData);
+                const newExpanded = {};
+                keys.forEach(k => newExpanded[k] = true);
+                setExpandedWarehouses(newExpanded);
+
+                // DOM'un güncellenmesi için bekle
+                await new Promise(r => setTimeout(r, 1000));
+
                 for (const key of keys) {
                    await handleDownloadSingle(key);
+                   // Tarayıcı indirme kuyruğunu yormamak için bekleme
                    await new Promise(r => setTimeout(r, 800));
                 }
                 setDownloadingAll(false);
+                alert("Tüm indirmeler tamamlandı!");
             };
 
             const currentMonth = new Date().toLocaleString('tr-TR', { month: 'long' });
             const currentDate = new Date().toLocaleDateString('tr-TR');
 
             return (
-                <div className="min-h-screen bg-slate-50 p-4 pb-24">
+                <div className="min-h-screen bg-slate-50 p-4 pb-24 text-slate-800">
                     <div className="max-w-5xl mx-auto space-y-6">
                         
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v26.0
+                                Eğitim Takip Asistanı v26.1
                             </h1>
                         </div>
 
@@ -517,7 +528,7 @@
                                                                 <h1 className="poster-title uppercase">{activeTab === 'orientation' ? 'ORYANTASYON EĞİTİMİ' : 'ÖĞRETİCİ SOHBETLER EĞİTİMİ'}</h1>
                                                                 <p className="poster-subtitle">
                                                                     {activeTab === 'chat' 
-                                                                        ? `Bulunduğumuz ${currentMonth} ayı içeriği: “${chatSettings.name || 'Eğitim Adı'}” videosu yayında.`
+                                                                        ? ` ${currentMonth} ayı içeriği: “${chatSettings.name || 'Eğitim Adı'}” videosu yayında.`
                                                                         : `Oryantasyon eğitimi tamamlamayan kurye listesi güncellendi.`}
                                                                 </p>
                                                             </div>
@@ -586,7 +597,17 @@
 
                         <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none">
                             <button onClick={handleDownloadAll} disabled={downloadingAll} className="bg-slate-800 text-white px-8 py-4 rounded-full font-bold shadow-lg pointer-events-auto flex items-center gap-2 hover:bg-slate-700 transition-all active:scale-95">
-                                {downloadingAll ? <Loader className="animate-spin" size={20}/> : <Layers size={20}/>} Tüm Görselleri İndir
+                                {downloadingAll ? (
+                                    <>
+                                        <Loader className="animate-spin" size={20}/>
+                                        <span>İndiriliyor...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Layers size={20}/>
+                                        <span>Tüm Görselleri İndir</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
