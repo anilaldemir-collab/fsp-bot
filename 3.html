@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v25.7</title>
+    <title>Eğitim Takip Asistanı v25.8</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,7 +92,7 @@
         .poster-header {
             padding: 26px 28px 22px 28px;
             display: flex;
-            align-items: center; /* Dikey hizalama sabitlendi */
+            align-items: center; 
             justify-content: space-between;
             gap: 16px;
             border-bottom: 1px solid var(--line-dark);
@@ -108,13 +108,15 @@
         .poster-logo {
             width: 62px; height: 62px; border-radius: 999px;
             background: var(--yellow);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            color: #3B1A8A; font-weight: 950; font-size: 15px;
-            box-shadow: 0 12px 22px rgba(0,0,0,0.18);
+            display: grid; 
+            place-items: center; /* En güvenli ortalama yöntemi */
+            color: #3B1A8A; 
+            font-weight: 950; 
+            font-size: 15px;
+            box-shadow: 0 12px 22px rgba(0,0,0,.18);
             flex: 0 0 auto;
-            line-height: 1; /* Yazının tam ortalanması için */
+            line-height: 1; 
+            text-align: center;
         }
 
         .poster-kicker {
@@ -133,14 +135,17 @@
             padding: 14px 20px; border-radius: var(--r-pill);
             border: 1px solid rgba(255,255,255,0.3);
             background: rgba(0,0,0,0.15);
-            display: flex; align-items: center; gap: 12px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 12px;
             box-shadow: var(--shadow-soft);
             flex: 0 0 auto;
-            align-self: center; /* Sağdaki tarih rozeti dikeyde ortalandı */
+            align-self: center; 
         }
 
         .poster-date-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--yellow); box-shadow: 0 0 0 6px rgba(255,209,13,0.16); }
-        .poster-date-text { font-weight: 950; font-size: 22px; }
+        .poster-date-text { font-weight: 950; font-size: 22px; line-height: 1; }
 
         .poster-main { padding: 24px 28px 28px 28px; display: flex; flex-direction: column; gap: 18px; }
 
@@ -327,21 +332,38 @@
                 
                 const originalStyle = el.getAttribute('style');
                 
+                // --- ÇEKİM ANINDA KESİN HİZALAMA VE STİL SABİTLEME ---
                 el.style.width = "900px";
                 el.style.minWidth = "900px";
                 el.style.backgroundColor = "#5D3EBC"; 
                 el.style.backgroundImage = "linear-gradient(180deg, #5D3EBC 0%, #734696 100%)";
-                
+                el.style.padding = "32px 24px";
+
                 const frame = el.querySelector('.poster-frame');
                 const originalFrameStyle = frame ? frame.getAttribute('style') : '';
+                
                 if(frame) {
                     frame.style.backdropFilter = "none"; 
                     frame.style.background = "rgba(255, 255, 255, 0.12)";
                     frame.style.border = "1px solid rgba(255,255,255,0.4)";
                 }
 
+                // Yazıların dikey kaymasını önlemek için grid elemanlarına müdahale
+                const logo = el.querySelector('.poster-logo');
+                if(logo) {
+                    logo.style.display = "flex";
+                    logo.style.alignItems = "center";
+                    logo.style.justifyContent = "center";
+                    logo.style.lineHeight = "62px"; // Sabit yükseklik ile eşitleme
+                }
+
+                const dateText = el.querySelector('.poster-date-text');
+                if(dateText) {
+                    dateText.style.lineHeight = "1";
+                }
+
                 try {
-                    await new Promise(r => setTimeout(r, 200));
+                    await new Promise(r => setTimeout(r, 300)); // Render bekleme
 
                     const canvas = await html2canvas(el, { 
                         scale: 2, 
@@ -383,7 +405,7 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v25.7
+                                Eğitim Takip Asistanı v25.8
                             </h1>
                         </div>
 
