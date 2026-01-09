@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı vx25.3</title>
+    <title>Eğitim Takip Asistanı v25.4</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -298,27 +298,37 @@
                 if (!listRefs.current[whName]) return;
                 const el = listRefs.current[whName];
                 
-                const originalWidth = el.style.width;
-                const originalMinWidth = el.style.minWidth;
-                el.style.width = "850px";
-                el.style.minWidth = "850px";
+                // ORANLARI VE TASARIMI KORUMAK İÇİN ÇÖZÜM:
+                // Çekim anında tüm geçici stilleri ve genişliği zorla (Desktop Standardı)
+                const originalStyle = el.getAttribute('style');
+                const frame = el.querySelector('.poster-frame');
+                const originalFrameStyle = frame ? frame.getAttribute('style') : '';
+
+                el.style.width = "900px";
+                el.style.minWidth = "900px";
+                if(frame) {
+                    frame.style.backdropFilter = "none"; // Canvas desteği yok, bozuyor
+                    frame.style.background = "rgba(255,255,255,0.15)"; // Daha belirgin solid renk
+                }
 
                 try {
                     const canvas = await html2canvas(el, { 
                         scale: 2, 
                         useCORS: true,
                         logging: false,
-                        windowWidth: 1000
+                        windowWidth: 1200,
+                        backgroundColor: "#5D3EBC"
                     });
                     const link = document.createElement('a');
-                    link.download = `${whName}.png`;
+                    link.download = `${whName} - ${new Date().toLocaleDateString('tr-TR')}.png`;
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 } catch(e) {
                     console.error("Canvas hatası:", e);
                 } finally {
-                    el.style.width = originalWidth;
-                    el.style.minWidth = originalMinWidth;
+                    // Stilleri eski haline getir
+                    el.setAttribute('style', originalStyle || '');
+                    if(frame) frame.setAttribute('style', originalFrameStyle || '');
                 }
             };
 
@@ -342,7 +352,7 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v25.3
+                                Eğitim Takip Asistanı v25.4
                             </h1>
                         </div>
 
@@ -351,7 +361,7 @@
                             <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'chat' ? 'bg-purple-100 text-purple-700' : 'text-slate-500'}`}>Öğretici Sohbetler</button>
                         </div>
 
-                        {/* ID AYARLARI BUTONU */}
+                        {/* AYARLAR BUTONU */}
                         <div className="flex justify-end">
                             <div className="relative">
                                 <button className="text-xs bg-white px-3 py-1.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium flex items-center gap-1 shadow-sm transition-all">
