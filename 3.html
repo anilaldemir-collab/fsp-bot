@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Eğitim Takip Asistanı v26.2</title>
+    <title>Eğitim Takip Asistanı v26.3</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,7 +92,7 @@
         .poster-header {
             padding: 26px 28px 22px 28px;
             display: flex;
-            flex-direction: column; /* Satır satır dizilim için */
+            flex-direction: column; 
             gap: 12px;
             border-bottom: 1px solid var(--line-dark);
         }
@@ -109,8 +109,7 @@
             height: 62px; 
             border-radius: 999px;
             background: var(--yellow);
-            display: grid; 
-            place-items: center;
+            display: block; 
             color: #3B1A8A; 
             font-weight: 950; 
             font-size: 15px;
@@ -118,16 +117,16 @@
             flex: 0 0 auto;
             padding: 0;
             margin: 0;
-            line-height: 1; 
+            line-height: 62px; /* Dikeyde kesin ortalama için yükseklik ile aynı değer */
             text-align: center;
         }
         
         .poster-logo-text {
-            display: block;
+            display: inline-block;
             margin: 0;
             padding: 0;
-            line-height: 1;
-            transform: translateY(1px);
+            line-height: 62px; /* Daire yüksekliği ile senkronize */
+            vertical-align: middle;
         }
 
         .poster-brand-text {
@@ -151,8 +150,7 @@
             padding: 14px 20px; border-radius: var(--r-pill);
             border: 1px solid rgba(255,255,255,0.3);
             background: rgba(0,0,0,0.15);
-            display: grid;
-            grid-auto-flow: column;
+            display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
@@ -346,6 +344,7 @@
                 
                 const originalStyle = el.getAttribute('style');
                 
+                // --- ÇEKİM ANINDA KESİN HİZALAMA VE STİL SABİTLEME ---
                 el.style.width = "900px";
                 el.style.minWidth = "900px";
                 el.style.backgroundColor = "#5D3EBC"; 
@@ -361,26 +360,34 @@
                     frame.style.border = "1px solid rgba(255,255,255,0.4)";
                 }
 
+                // LOGO İÇİN KESİN MERKEZLEME ZORLAMASI
                 const logo = el.querySelector('.poster-logo');
                 const originalLogoStyle = logo ? logo.getAttribute('style') : '';
                 if(logo) {
-                    logo.style.display = "grid";
-                    logo.style.placeItems = "center";
-                    logo.style.lineHeight = "1";
+                    logo.style.display = "block";
+                    logo.style.lineHeight = "62px";
+                    logo.style.textAlign = "center";
                     logo.style.padding = "0";
+                }
+
+                const logoText = el.querySelector('.poster-logo-text');
+                const originalLogoTextStyle = logoText ? logoText.getAttribute('style') : '';
+                if(logoText) {
+                    logoText.style.display = "inline-block";
+                    logoText.style.lineHeight = "62px";
+                    logoText.style.verticalAlign = "middle";
                 }
 
                 const datePill = el.querySelector('.poster-date-pill');
                 const originalDatePillStyle = datePill ? datePill.getAttribute('style') : '';
                 if(datePill) {
-                    datePill.style.display = "grid";
-                    datePill.style.gridAutoFlow = "column";
+                    datePill.style.display = "flex";
                     datePill.style.alignItems = "center";
                     datePill.style.justifyContent = "center";
                 }
 
                 try {
-                    await new Promise(r => setTimeout(r, 400)); 
+                    await new Promise(r => setTimeout(r, 600)); 
 
                     const canvas = await html2canvas(el, { 
                         scale: 2, 
@@ -397,9 +404,11 @@
                 } catch(e) {
                     console.error("Canvas hatası:", e);
                 } finally {
+                    // Stilleri eski haline getir
                     el.setAttribute('style', originalStyle || '');
                     if(frame) frame.setAttribute('style', originalFrameStyle || '');
                     if(logo) logo.setAttribute('style', originalLogoStyle || '');
+                    if(logoText) logoText.setAttribute('style', originalLogoTextStyle || '');
                     if(datePill) datePill.setAttribute('style', originalDatePillStyle || '');
                 }
             };
@@ -413,11 +422,11 @@
                 keys.forEach(k => newExpanded[k] = true);
                 setExpandedWarehouses(newExpanded);
 
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, 1200));
 
                 for (const key of keys) {
                    await handleDownloadSingle(key);
-                   await new Promise(r => setTimeout(r, 800));
+                   await new Promise(r => setTimeout(r, 1000));
                 }
                 setDownloadingAll(false);
                 alert("Tüm indirmeler tamamlandı!");
@@ -433,7 +442,7 @@
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                                 <FileText className="text-blue-600" />
-                                Eğitim Takip Asistanı v26.2
+                                Eğitim Takip Asistanı v26.3
                             </h1>
                         </div>
 
